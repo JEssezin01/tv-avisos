@@ -56,11 +56,12 @@ body {
   transform: translate(-50%, -50%) rotate(0deg);
 }
 
-/* Em pe: gira 90 graus e troca largura/altura para preencher a tela. */
+/* Em pe: gira -90 graus (sentido anti-horario) e troca largura/altura
+   para preencher a tela. */
 .stage.layout-vertical {
   width: 100vh;
   height: 100vw;
-  transform: translate(-50%, -50%) rotate(90deg);
+  transform: translate(-50%, -50%) rotate(-90deg);
 }
 
 .aviso {
