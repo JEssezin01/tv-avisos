@@ -12,8 +12,9 @@ let urlAtual = null; // evita recarregar a mesma midia a toa
 
 function aplicarLayout(layout) {
   const vertical = layout === 'vertical';
-  document.body.classList.toggle('layout-vertical', vertical);
-  document.body.classList.toggle('layout-horizontal', !vertical);
+  // a classe fica no proprio palco (nao no <body>) para o CSS pegar direto
+  elStage.classList.toggle('layout-vertical', vertical);
+  elStage.classList.toggle('layout-horizontal', !vertical);
 }
 
 function mostrarAviso(texto) {

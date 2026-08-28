@@ -28,28 +28,39 @@ body {
   place-items: center;
 }
 
-/* A "cena" ocupa a tela toda e gira conforme a orientacao escolhida. */
+/* A "cena" ocupa a tela toda e gira conforme a orientacao escolhida.
+   Fica presa no centro da tela (position: fixed + translate -50%), entao
+   a rotacao nunca "escapa" da tela e nada e cortado, em qualquer resolucao
+   (celular, notebook, TV). */
 .stage {
+  position: fixed;
+  top: 50%;
+  left: 50%;
   width: 100vw;
   height: 100vh;
   display: grid;
   place-items: center;
   padding: 6vmin;
   text-align: center;
+  transform: translate(-50%, -50%) rotate(0deg);
   transform-origin: center center;
-  transition: transform 0.6s ease, width 0.6s ease, height 0.6s ease;
+  /* Virada de orientacao instantanea (sem transition em width/height/
+     transform): assim nunca "trava no meio" e o conteudo aparece sempre
+     inteiro e centralizado, em qualquer resolucao (celular, notebook, TV). */
 }
 
-/* Deitado (padrao): sem rotacao. */
-body.layout-horizontal .stage {
-  transform: rotate(0deg);
+/* Deitado (padrao): ja e o .stage acima, sem rotacao. */
+.stage.layout-horizontal {
+  width: 100vw;
+  height: 100vh;
+  transform: translate(-50%, -50%) rotate(0deg);
 }
 
 /* Em pe: gira 90 graus e troca largura/altura para preencher a tela. */
-body.layout-vertical .stage {
+.stage.layout-vertical {
   width: 100vh;
   height: 100vw;
-  transform: rotate(90deg);
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .aviso {
@@ -62,11 +73,15 @@ body.layout-vertical .stage {
   word-break: break-word;
 }
 
-/* Video / imagem: preenche a tela sem cortar as bordas */
+/* Video / imagem: aparece inteiro (nunca cortado), centralizado, seja
+   qual for a resolucao da tela ou do arquivo.
+   Obs: nao definir "display" aqui -> o atributo [hidden] no elemento
+   escondido precisa continuar valendo (display: none). */
 .media {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
   background: #000;
 }
 
