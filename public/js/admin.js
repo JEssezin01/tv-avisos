@@ -45,6 +45,32 @@ function flashOk(texto) {
   }, 2500);
 }
 
+// Feedback visual imediato no proprio botao.
+// fase: 'enviando' | 'ok' | 'erro'. `texto` opcional troca o rotulo no 'ok'/'erro'.
+function pulsoBotao(btn, fase, texto) {
+  if (!btn) return;
+  clearTimeout(btn._pulso);
+  btn.classList.remove('is-sending', 'is-ok', 'is-fail');
+
+  if (fase === 'enviando') {
+    if (btn.dataset.rotulo == null) btn.dataset.rotulo = btn.textContent;
+    btn.classList.add('is-sending');
+    btn.disabled = true;
+    return;
+  }
+
+  btn.disabled = false;
+  btn.classList.add(fase === 'ok' ? 'is-ok' : 'is-fail');
+  const original = btn.dataset.rotulo != null ? btn.dataset.rotulo : btn.textContent;
+  if (texto) btn.textContent = texto;
+
+  btn._pulso = setTimeout(() => {
+    btn.classList.remove('is-ok', 'is-fail');
+    btn.textContent = original;
+    delete btn.dataset.rotulo;
+  }, 1100);
+}
+
 // ---- sessao ---------------------------------------------------
 
 async function atualizarSessao() {
@@ -144,14 +170,18 @@ async function enviarEstado(patch) {
   }
 }
 
-segLayout.addEventListener('click', (e) => {
+segLayout.addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-layout]');
   if (!btn) return;
-  enviarEstado({ layout: btn.dataset.layout });
+  pulsoBotao(btn, 'enviando');
+  const s = await enviarEstado({ layout: btn.dataset.layout });
+  pulsoBotao(btn, s ? 'ok' : 'erro'); // botao estreito: so muda a cor
 });
 
 showAvisoBtn.addEventListener('click', async () => {
+  pulsoBotao(showAvisoBtn, 'enviando');
   const s = await enviarEstado({ mode: 'aviso', message: messageEl.value });
+  pulsoBotao(showAvisoBtn, s ? 'ok' : 'erro', s ? 'Enviado ✓' : 'Erro');
   if (s) flashOk('Aviso no ar.');
 });
 
@@ -200,7 +230,9 @@ function renderLista(items) {
     showBtn.type = 'button';
     showBtn.textContent = 'Mostrar';
     showBtn.addEventListener('click', async () => {
+      pulsoBotao(showBtn, 'enviando');
       const s = await enviarEstado({ mode: 'media', mediaId: item.id });
+      pulsoBotao(showBtn, s ? 'ok' : 'erro', s ? '✓' : 'Erro');
       if (s) flashOk('No ar: ' + item.name);
     });
 

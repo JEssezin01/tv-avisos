@@ -10,6 +10,15 @@
     <main class="card">
       <!-- TELA DE LOGIN -->
       <section id="loginView" hidden>
+        <div class="brand brand--login">
+          <svg class="brand-mark" viewBox="0 0 21 13" fill="none" stroke="currentColor"
+               stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="20" height="12" rx="1.3" />
+            <path d="M13 0.5 V12.5" />
+            <path d="M13 0.5 A 12 12 0 0 0 1 12.5" />
+          </svg>
+          <span class="brand-by">Oliva Ratio</span>
+        </div>
         <h1>Painel do Mural</h1>
         <p class="muted">Entre com a senha para controlar a TV.</p>
         <form id="loginForm" autocomplete="on">
@@ -23,7 +32,18 @@
       <!-- PAINEL DE CONTROLE -->
       <section id="panelView" hidden>
         <div class="topbar">
-          <h1>Mural TV</h1>
+          <div class="brand">
+            <svg class="brand-mark" viewBox="0 0 21 13" fill="none" stroke="currentColor"
+                 stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="0.5" y="0.5" width="20" height="12" rx="1.3" />
+              <path d="M13 0.5 V12.5" />
+              <path d="M13 0.5 A 12 12 0 0 0 1 12.5" />
+            </svg>
+            <span class="brand-text">
+              <h1 class="brand-app">Mural TV</h1>
+              <span class="brand-by">Oliva Ratio</span>
+            </span>
+          </div>
           <button id="logoutBtn" class="ghost" type="button">Sair</button>
         </div>
 

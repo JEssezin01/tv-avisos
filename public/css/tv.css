@@ -1,8 +1,9 @@
-/* Player da TV. Objetivo: leve e legivel de longe. */
+/* Player da TV. Objetivo: leve, legivel de longe e estavel por meses. */
 
 :root {
-  --bg: #071633;      /* navy da identidade Guilly Moove */
+  --bg: #071633;      /* navy da identidade */
   --fg: #f2e6dc;      /* champagne */
+  --accent: #c9a227;  /* dourado (proporcao aurea / Oliva Ratio) */
   --ok: #59d98e;
   --off: #e0603a;
 }
@@ -28,10 +29,15 @@ body {
   place-items: center;
 }
 
-/* A "cena" ocupa a tela toda e gira conforme a orientacao escolhida.
-   Fica presa no centro da tela (position: fixed + translate -50%), entao
-   a rotacao nunca "escapa" da tela e nada e cortado, em qualquer resolucao
-   (celular, notebook, TV). */
+/* A "cena" ocupa a tela toda e gira conforme a orientacao.
+   ---------------------------------------------------------------
+   Fluidez / anti-engasgo:
+   - translate3d(...) + will-change: transform forcam uma CAMADA DE GPU
+     propria. A virada de orientacao vira uma composicao na GPU
+     (instantanea), sem repintar a pagina.
+   - SEM transition em transform/width/height. Transicao ja travou telas
+     de TV antes (ficava "presa no meio"). A rotacao e imediata.
+   - backface-visibility: hidden evita flicker em alguns navegadores Tizen. */
 .stage {
   position: fixed;
   top: 50%;
@@ -42,26 +48,25 @@ body {
   place-items: center;
   padding: 6vmin;
   text-align: center;
-  transform: translate(-50%, -50%) rotate(0deg);
+  transform: translate3d(-50%, -50%, 0) rotate3d(0, 0, 1, 0deg);
   transform-origin: center center;
-  /* Virada de orientacao instantanea (sem transition em width/height/
-     transform): assim nunca "trava no meio" e o conteudo aparece sempre
-     inteiro e centralizado, em qualquer resolucao (celular, notebook, TV). */
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
-/* Deitado (padrao): ja e o .stage acima, sem rotacao. */
+/* Deitado (padrao). */
 .stage.layout-horizontal {
   width: 100vw;
   height: 100vh;
-  transform: translate(-50%, -50%) rotate(0deg);
+  transform: translate3d(-50%, -50%, 0) rotate3d(0, 0, 1, 0deg);
 }
 
-/* Em pe: gira -90 graus (sentido anti-horario) e troca largura/altura
-   para preencher a tela. */
+/* Em pe: gira -90 graus (anti-horario) e troca largura/altura para
+   preencher a tela. Aceleracao de hardware via translate3d. */
 .stage.layout-vertical {
   width: 100vh;
   height: 100vw;
-  transform: translate(-50%, -50%) rotate(-90deg);
+  transform: translate3d(-50%, -50%, 0) rotate3d(0, 0, 1, -90deg);
 }
 
 .aviso {
@@ -74,21 +79,50 @@ body {
   word-break: break-word;
 }
 
-/* Video / imagem: aparece inteiro (nunca cortado), centralizado, seja
-   qual for a resolucao da tela ou do arquivo.
-   Obs: nao definir "display" aqui -> o atributo [hidden] no elemento
-   escondido precisa continuar valendo (display: none). */
+/* Video / imagem: aparece inteiro (nunca cortado), centralizado, em
+   qualquer resolucao. translateZ(0) coloca o video na sua propria
+   camada de GPU (decodificacao por hardware em muitas TVs).
+   Obs: nao definir "display" aqui -> o [hidden] precisa continuar valendo. */
 .media {
   width: 100%;
   height: 100%;
   object-fit: contain;
   object-position: center;
   background: #000;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-/* Ao exibir midia, tira o respiro do palco para preencher a tela */
+/* Ao exibir midia, tira o respiro do palco para preencher a tela. */
 .stage.has-media {
   padding: 0;
+}
+
+/* Marca Oliva Ratio - discreta, dentro do palco (gira junto com o
+   conteudo, entao fica sempre "de pe" para quem olha). */
+.brand-tv {
+  position: absolute;
+  right: 2.6vmin;
+  bottom: 2.4vmin;
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  font-size: 0.72rem;
+  color: var(--fg);
+  opacity: 0.24;
+  pointer-events: none;
+  user-select: none;
+}
+.brand-tv svg {
+  width: 1.5em;
+  height: auto;
+  display: block;
+  color: var(--accent);
+}
+.brand-tv .wm {
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-weight: 400;
 }
 
 .fs-btn {
@@ -132,4 +166,10 @@ body:fullscreen .fs-btn {
 .status[data-state="connecting"],
 .status[data-state="disconnected"] {
   color: var(--off);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-btn {
+    transition: none;
+  }
 }

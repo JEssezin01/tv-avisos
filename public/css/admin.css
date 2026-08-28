@@ -57,7 +57,43 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 0.75rem;
+}
+
+/* --- Marca Oliva Ratio (retangulo aureo + divisao 1:phi + espiral) --- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.brand--login {
+  margin-bottom: 1rem;
+}
+.brand-mark {
+  width: 26px;
+  height: auto;
+  flex: none;
+  color: var(--accent);
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  min-width: 0;
+}
+.brand-app {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.brand-by {
+  font-family: Georgia, "Cormorant Garamond", "Times New Roman", serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 0.2rem;
 }
 
 .now {
@@ -136,6 +172,35 @@ button.ghost {
   border: 1px solid rgba(255, 255, 255, 0.25);
   font-size: 0.85rem;
   font-weight: 500;
+}
+
+/* --- Feedback imediato no botao ao enviar um comando --- */
+button {
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+button.is-sending {
+  opacity: 0.6;
+  cursor: progress;
+}
+button.is-ok,
+.seg button.is-ok {
+  background: var(--ok) !important;
+  color: #06210f !important;
+  animation: btn-pop 0.28s ease;
+}
+button.is-fail,
+.seg button.is-fail {
+  background: var(--err) !important;
+  color: #fff !important;
+}
+@keyframes btn-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
+  button.is-ok, .seg button.is-ok { animation: none; }
 }
 
 /* Segmento Deitado / Em pe */
