@@ -204,7 +204,7 @@ function renderStorage(usage) {
   storageText.textContent =
     formatoTamanho(usage.usedBytes) + ' de ' + formatoTamanho(usage.limitBytes);
   mediaHint.textContent =
-    'Video .mp4/.webm ou imagem .jpg/.png/.webp · ate ' +
+    'Video .mp4/.webm/.mov ou imagem .jpg/.png/.webp · ate ' +
     Math.round(mb(usage.maxFileBytes)) +
     ' MB por arquivo';
 }

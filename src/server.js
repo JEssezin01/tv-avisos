@@ -133,7 +133,7 @@ app.post('/api/media', requireAuth, (req, res) => {
     if (!req.file) {
       return res
         .status(415)
-        .json({ error: 'Envie video .mp4/.webm ou imagem .jpg/.png/.webp' });
+        .json({ error: 'Envie video .mp4/.webm/.mov ou imagem .jpg/.png/.webp' });
     }
     try {
       const item = await adicionarMidia({

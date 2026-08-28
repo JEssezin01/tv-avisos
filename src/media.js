@@ -13,9 +13,12 @@ export const TMP_DIR = join(aqui, '..', 'data', 'tmp');
 const INDICE = join(aqui, '..', 'data', 'media.json');
 
 // mime aceito -> extensao no disco + categoria
+// Obs: .mov (video/quicktime) so toca na TV se o codec interno for H.264.
+// .mov de iPhone costuma ser HEVC e NAO toca no navegador da Samsung.
 const TIPOS = {
   'video/mp4': { ext: 'mp4', type: 'video' },
   'video/webm': { ext: 'webm', type: 'video' },
+  'video/quicktime': { ext: 'mov', type: 'video' },
   'image/jpeg': { ext: 'jpg', type: 'image' },
   'image/png': { ext: 'png', type: 'image' },
   'image/webp': { ext: 'webp', type: 'image' },
