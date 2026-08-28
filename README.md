@@ -99,7 +99,7 @@ server {
     server_name tv.SEUDOMINIO;
 
     # Precisa ser >= MAX_UPLOAD_MB do .env, senao o Nginx corta o upload do video.
-    client_max_body_size 200M;
+    client_max_body_size 600M;
 
     location / {
         proxy_pass http://127.0.0.1:4173;
@@ -116,7 +116,7 @@ server {
 
         # uploads grandes: nao bufferiza tudo antes de repassar, e da mais tempo
         proxy_request_buffering off;
-        proxy_read_timeout 300s;
+        proxy_read_timeout 600s;
     }
 }
 ```
@@ -177,8 +177,9 @@ data/
   no servidor e aparece na lista.
 - "Mostrar" poe o item na TV (video toca em **loop e mudo**, em tela cheia).
   "Mostrar este aviso na TV" volta para o texto. So um item por vez.
-- Limites no `.env`: `MAX_UPLOAD_MB` (padrao 150) por arquivo e `STORAGE_LIMIT_MB`
+- Limites no `.env`: `MAX_UPLOAD_MB` (padrao 500) por arquivo e `STORAGE_LIMIT_MB`
   (padrao 3072 = 3 GB) no total. A barra no painel mostra o espaco usado.
+  Ao mudar `MAX_UPLOAD_MB`, ajuste tambem o `client_max_body_size` do Nginx.
 - Os arquivos tem nomes unicos e sao servidos com cache longo em `/media/...`,
   entao a TV baixa o video uma vez e repete do cache (economiza banda da VPS).
 - Dica: gravar em 1080p (nao 4K) e manter clipes curtos (~2 min).

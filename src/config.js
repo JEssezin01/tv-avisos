@@ -22,6 +22,6 @@ export const config = {
   isProd: process.env.NODE_ENV === 'production',
 
   // Midia: tamanho maximo por arquivo e espaco total no servidor.
-  maxUploadMb: Number(process.env.MAX_UPLOAD_MB ?? 150),
+  maxUploadMb: Number(process.env.MAX_UPLOAD_MB ?? 500),
   storageLimitMb: Number(process.env.STORAGE_LIMIT_MB ?? 3072),
 };
