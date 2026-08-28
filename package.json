@@ -1,0 +1,28 @@
+{
+  "name": "tv-avisos",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sistema de avisos e midias para TV domestica, com atualizacao em tempo real via WebSocket.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "hash": "node scripts/hash-senha.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "multer": "^2.2.0",
+    "session-file-store": "^1.5.0",
+    "socket.io": "^4.7.5"
+  }
+}

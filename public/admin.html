@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Painel &mdash; Mural TV</title>
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <main class="card">
+      <!-- TELA DE LOGIN -->
+      <section id="loginView" hidden>
+        <h1>Painel do Mural</h1>
+        <p class="muted">Entre com a senha para controlar a TV.</p>
+        <form id="loginForm" autocomplete="on">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" autocomplete="current-password" required />
+          <button type="submit">Entrar</button>
+          <p class="error" id="loginError" role="alert"></p>
+        </form>
+      </section>
+
+      <!-- PAINEL DE CONTROLE -->
+      <section id="panelView" hidden>
+        <div class="topbar">
+          <h1>Mural TV</h1>
+          <button id="logoutBtn" class="ghost" type="button">Sair</button>
+        </div>
+
+        <p class="now">Na TV agora: <b id="nowWhat">&mdash;</b></p>
+
+        <!-- ORIENTACAO -->
+        <div class="block">
+          <h2>Orienta&ccedil;&atilde;o da tela</h2>
+          <div class="seg" id="segLayout" role="group" aria-label="Orienta&ccedil;&atilde;o da tela">
+            <button type="button" data-layout="horizontal">Deitado</button>
+            <button type="button" data-layout="vertical">Em p&eacute;</button>
+          </div>
+        </div>
+
+        <!-- AVISO DE TEXTO -->
+        <div class="block">
+          <h2>Aviso de texto</h2>
+          <textarea id="message" rows="3" maxlength="500" placeholder="Digite o aviso&hellip;"></textarea>
+          <button type="button" id="showAvisoBtn">Mostrar este aviso na TV</button>
+        </div>
+
+        <!-- VIDEO / IMAGEM -->
+        <div class="block">
+          <h2>V&iacute;deo / imagem</h2>
+          <label class="file-btn">
+            <input
+              type="file"
+              id="fileInput"
+              accept="video/mp4,video/webm,image/jpeg,image/png,image/webp"
+              hidden
+            />
+            <span id="fileBtnText">Escolher do celular&hellip;</span>
+          </label>
+          <div class="progress" id="progress" hidden><div id="progressBar"></div></div>
+          <p class="hint" id="mediaHint">&nbsp;</p>
+          <p class="error" id="mediaErr" role="alert"></p>
+
+          <ul class="media-list" id="mediaList"></ul>
+
+          <div class="storage">
+            <div class="storage-track"><div id="storageFill"></div></div>
+            <span id="storageText">&mdash;</span>
+          </div>
+        </div>
+
+        <p class="ok" id="okMsg" role="status"></p>
+        <p class="muted"><a href="/tv" target="_blank" rel="noopener">Abrir a tela da TV</a></p>
+      </section>
+    </main>
+
+    <script src="/js/admin.js"></script>
+  </body>
+</html>

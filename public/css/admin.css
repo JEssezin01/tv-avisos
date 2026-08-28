@@ -1,0 +1,291 @@
+/* Painel de controle. Mobile-first: pensado para uso pelo celular. */
+
+:root {
+  --bg: #071633;
+  --surface: #0d2149;
+  --fg: #f2e6dc;
+  --muted: #9fb0c9;
+  --accent: #c9a227;
+  --ok: #59d98e;
+  --err: #e0603a;
+  --line: rgba(255, 255, 255, 0.14);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  padding: 1.25rem;
+  display: grid;
+  place-items: start center;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+.card {
+  width: 100%;
+  max-width: 30rem;
+  margin-top: 6vh;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+h1 {
+  font-size: 1.4rem;
+}
+
+h2 {
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0.75rem 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.now {
+  font-size: 0.9rem;
+  color: var(--muted);
+  padding: 0.6rem 0.8rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+.now b {
+  color: var(--fg);
+}
+
+/* Blocos de controle */
+.block {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+input[type="password"],
+textarea {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  color: var(--fg);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  resize: vertical;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Botao padrao (acao principal) */
+button {
+  margin-top: 0.7rem;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+button:hover {
+  filter: brightness(1.08);
+}
+button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+button.ghost {
+  margin: 0;
+  padding: 0.4rem 0.8rem;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Segmento Deitado / Em pe */
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+}
+.seg button {
+  margin: 0;
+  padding: 0.55rem 0.4rem;
+  color: var(--fg);
+  background: transparent;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.seg button.active {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+/* Botao de escolher arquivo (e um <label>) */
+.file-btn {
+  display: block;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.file-btn:hover {
+  filter: brightness(1.08);
+}
+
+.progress {
+  margin-top: 0.6rem;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+#progressBar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.15s linear;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+}
+
+.error {
+  color: var(--err);
+  font-size: 0.85rem;
+  min-height: 1.1em;
+}
+
+.ok {
+  color: var(--ok);
+  font-size: 0.9rem;
+  min-height: 1.2em;
+  margin-top: 1rem;
+}
+
+/* Lista de midias */
+.media-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.media-list:empty {
+  display: none;
+}
+.media-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.media-list li.on {
+  border-color: var(--accent);
+}
+.mi-info {
+  min-width: 0;
+}
+.mi-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+.mi-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.media-list button {
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+}
+.media-list .mi-del {
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-weight: 500;
+}
+
+/* Barra de espaco usado */
+.storage {
+  margin-top: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.storage-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+#storageFill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+}
+#storageFill.full {
+  background: var(--err);
+}
+
+a {
+  color: var(--accent);
+}

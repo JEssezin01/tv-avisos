@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mural TV</title>
+    <link rel="stylesheet" href="/css/tv.css" />
+  </head>
+  <body class="layout-horizontal">
+    <div class="stage" id="stage">
+      <p class="aviso" id="aviso">Conectando&hellip;</p>
+      <video
+        class="media"
+        id="mediaVideo"
+        muted
+        loop
+        playsinline
+        autoplay
+        preload="auto"
+        hidden
+      ></video>
+      <img class="media" id="mediaImage" alt="" hidden />
+    </div>
+
+    <button class="fs-btn" id="fsBtn" type="button">Tela cheia</button>
+    <span class="status" id="status" data-state="connecting" title="conexao">&bull;</span>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/tv.js"></script>
+  </body>
+</html>
