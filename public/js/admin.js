@@ -34,16 +34,42 @@ const nsBg = document.getElementById('nsBg');
 const nsFont = document.getElementById('nsFont');
 const nsBgOp = document.getElementById('nsBgOp');
 const nsBgOpVal = document.getElementById('nsBgOpVal');
+const nsShowBg = document.getElementById('nsShowBg');
+const nsBgFields = document.getElementById('nsBgFields');
+const nsPos = document.getElementById('nsPos');
+const nsSize = document.getElementById('nsSize');
+const nsSizeVal = document.getElementById('nsSizeVal');
 const nsAlways = document.getElementById('nsAlways');
 const namePreview = document.getElementById('namePreview');
+const namePreviewBox = document.getElementById('namePreviewBox');
 
 const okMsg = document.getElementById('okMsg');
 
 // Copia de trabalho (sincronizada com o servidor).
 let playlist = []; // [{ id, title }]
 let playSettings = { nameSec: 5, photoSec: 10, videoMaxSec: 90 };
-let nameStyle = { color: '#f2e6dc', bg: '#071633', bgOpacity: 0.82, font: 'serif', alwaysOn: false };
+let nameStyle = {
+  color: '#f2e6dc',
+  bg: '#071633',
+  bgOpacity: 0.82,
+  showBg: true,
+  font: 'serif',
+  sizeVmin: 4.5,
+  pos: 'bottom-left',
+  alwaysOn: false,
+};
 let libItems = []; // ultimo /api/media (para achar nome ao adicionar)
+
+// Posicao -> alinhamento dentro da previa (flex).
+const PREVIEW_ALIGN = {
+  'bottom-left': ['flex-end', 'flex-start'],
+  'bottom-center': ['flex-end', 'center'],
+  'bottom-right': ['flex-end', 'flex-end'],
+  'top-left': ['flex-start', 'flex-start'],
+  'top-center': ['flex-start', 'center'],
+  'top-right': ['flex-start', 'flex-end'],
+  center: ['center', 'center'],
+};
 
 const FONTES_ADMIN = {
   serif: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
@@ -391,15 +417,39 @@ function renderNameStyle() {
   nsBg.value = nameStyle.bg || '#071633';
   nsFont.value = nameStyle.font || 'serif';
   nsBgOp.value = Math.round((nameStyle.bgOpacity != null ? nameStyle.bgOpacity : 0.82) * 100);
+  nsShowBg.checked = nameStyle.showBg !== false;
+  nsPos.value = nameStyle.pos || 'bottom-left';
+  nsSize.value = nameStyle.sizeVmin != null ? nameStyle.sizeVmin : 4.5;
   nsAlways.checked = !!nameStyle.alwaysOn;
   atualizarPreview();
 }
 
 function atualizarPreview() {
+  const comFundo = nsShowBg.checked;
+  nsBgFields.hidden = !comFundo;
   nsBgOpVal.textContent = nsBgOp.value + '%';
+  nsSizeVal.textContent = nsSize.value;
+
+  // tamanho na previa: vmin -> px (a caixa e pequena, entao escala reduzida)
+  const px = Math.min(34, Math.max(12, Number(nsSize.value) * 3));
   namePreview.style.color = nsColor.value;
-  namePreview.style.background = hexRgba(nsBg.value, Number(nsBgOp.value) / 100);
   namePreview.style.fontFamily = FONTES_ADMIN[nsFont.value] || FONTES_ADMIN.serif;
+  namePreview.style.fontSize = px + 'px';
+  if (comFundo) {
+    namePreview.style.background = hexRgba(nsBg.value, Number(nsBgOp.value) / 100);
+    namePreview.style.borderLeft = '3px solid #c9a227';
+    namePreview.style.paddingLeft = '';
+    namePreview.style.textShadow = 'none';
+  } else {
+    namePreview.style.background = 'transparent';
+    namePreview.style.borderLeft = '0';
+    namePreview.style.paddingLeft = '0';
+    namePreview.style.textShadow = '0 2px 10px rgba(0,0,0,.75), 0 0 3px rgba(0,0,0,.95)';
+  }
+
+  const al = PREVIEW_ALIGN[nsPos.value] || PREVIEW_ALIGN['bottom-left'];
+  namePreviewBox.style.alignItems = al[0];
+  namePreviewBox.style.justifyContent = al[1];
 }
 
 function lerNameStyle() {
@@ -407,21 +457,24 @@ function lerNameStyle() {
     color: nsColor.value,
     bg: nsBg.value,
     bgOpacity: Number(nsBgOp.value) / 100,
+    showBg: nsShowBg.checked,
     font: nsFont.value,
+    sizeVmin: Number(nsSize.value),
+    pos: nsPos.value,
     alwaysOn: nsAlways.checked,
   };
 }
 
-// arrastar cor/opacidade: preview ao vivo + salva com debounce
-[nsColor, nsBg, nsBgOp].forEach((el) => {
+// arrastar cor/opacidade/tamanho: preview ao vivo + salva com debounce
+[nsColor, nsBg, nsBgOp, nsSize].forEach((el) => {
   el.addEventListener('input', () => {
     lerNameStyle();
     atualizarPreview();
     salvarPlaylist(false);
   });
 });
-// select e checkbox: salva na hora
-[nsFont, nsAlways].forEach((el) => {
+// selects e checkboxes: salva na hora
+[nsFont, nsPos, nsShowBg, nsAlways].forEach((el) => {
   el.addEventListener('change', () => {
     lerNameStyle();
     atualizarPreview();

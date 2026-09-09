@@ -468,12 +468,14 @@ button.is-fail,
   margin-bottom: 0.5rem;
 }
 .name-preview {
-  display: grid;
-  place-items: center;
-  min-height: 5rem;
-  padding: 1rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  min-height: 6.5rem;
+  padding: 0.9rem;
   margin-bottom: 0.7rem;
   border-radius: 10px;
+  overflow: hidden;
   background: repeating-linear-gradient(
     45deg,
     #0a0f18,
@@ -495,7 +497,7 @@ button.is-fail,
 }
 .ns-grid {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: auto 1fr;
   gap: 0.6rem;
   align-items: end;
 }
@@ -553,6 +555,35 @@ button.is-fail,
   width: 1.05rem;
   height: 1.05rem;
   accent-color: var(--accent);
+}
+.ns-row select {
+  flex: 1;
+  padding: 0.45rem 0.5rem;
+  font: inherit;
+  color: var(--fg);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+.ns-row input[type='color'] {
+  width: 3rem;
+  height: 2rem;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ns-bg-fields {
+  margin-top: 0.2rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--line);
+}
+#nsSizeVal {
+  min-width: 2.2em;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 a {

@@ -53,11 +53,28 @@ function hexRgba(hex, a) {
   );
 }
 
+const POS_CLASSES = [
+  'pos-bottom-left', 'pos-bottom-center', 'pos-bottom-right',
+  'pos-top-left', 'pos-top-center', 'pos-top-right', 'pos-center',
+];
+
 function aplicarNameStyle(ns) {
   if (!ns) return;
   if (ns.color) elNameTag.style.color = ns.color;
-  elNameTag.style.background = hexRgba(ns.bg, ns.bgOpacity);
+
+  const comFundo = ns.showBg !== false;
+  elNameTag.classList.toggle('no-bg', !comFundo);
+  elNameTag.style.background = comFundo ? hexRgba(ns.bg, ns.bgOpacity) : 'transparent';
+
   elNameTag.style.fontFamily = FONTES_TV[ns.font] || FONTES_TV.serif;
+
+  const sz = Number(ns.sizeVmin);
+  elNameTag.style.fontSize = (isFinite(sz) ? Math.min(12, Math.max(2, sz)) : 4.5) + 'vmin';
+
+  const pos = 'pos-' + (ns.pos || 'bottom-left');
+  POS_CLASSES.forEach(function (c) {
+    elNameTag.classList.toggle(c, c === pos);
+  });
 }
 
 function pausarVideo() {

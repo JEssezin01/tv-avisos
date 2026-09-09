@@ -14,6 +14,15 @@ const LIMITE_TITULO = 120;
 const LIMITE_PLAYLIST = 50;
 
 const FONTES = new Set(['serif', 'sans', 'impact', 'mono']);
+const POSICOES = new Set([
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+  'top-left',
+  'top-center',
+  'top-right',
+  'center',
+]);
 
 const PADRAO = {
   mode: 'aviso', // 'aviso' (texto) | 'media' (um item) | 'playlist' (rodizio)
@@ -27,7 +36,10 @@ const PADRAO = {
     color: '#f2e6dc',
     bg: '#071633',
     bgOpacity: 0.82,
+    showBg: true, // false = so a letra, sem caixa atras (com sombra pra ler)
     font: 'serif',
+    sizeVmin: 4.5, // tamanho da letra (em vmin)
+    pos: 'bottom-left', // onde o nome fica na tela
     alwaysOn: false, // true = fica fixo; false = some depois de nameSec
   },
   updatedAt: new Date().toISOString(),
@@ -76,11 +88,15 @@ function limparNameStyle(s, base) {
   const b = base || PADRAO.nameStyle;
   if (!s || typeof s !== 'object') return { ...b };
   const op = Number(s.bgOpacity);
+  const sz = Number(s.sizeVmin);
   return {
     color: ehHex(s.color) ? s.color.toLowerCase() : b.color,
     bg: ehHex(s.bg) ? s.bg.toLowerCase() : b.bg,
     bgOpacity: Number.isFinite(op) ? Math.min(1, Math.max(0, op)) : b.bgOpacity,
+    showBg: typeof s.showBg === 'boolean' ? s.showBg : b.showBg,
     font: FONTES.has(s.font) ? s.font : b.font,
+    sizeVmin: Number.isFinite(sz) ? Math.min(12, Math.max(2, sz)) : b.sizeVmin,
+    pos: POSICOES.has(s.pos) ? s.pos : b.pos,
     alwaysOn: typeof s.alwaysOn === 'boolean' ? s.alwaysOn : b.alwaysOn,
   };
 }

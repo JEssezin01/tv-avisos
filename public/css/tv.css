@@ -98,16 +98,15 @@ body {
   padding: 0;
 }
 
-/* Nome do item da playlist (por cima da midia, canto inferior esquerdo).
+/* Nome do item da playlist (por cima da midia). Cor, fundo, fonte, tamanho
+   e posicao vem do painel (nameStyle) e sao aplicados inline pelo tv.js.
    Fica dentro do palco -> gira junto e continua legivel na vertical. */
 .name-tag {
   position: absolute;
-  left: 5vmin;
-  bottom: 5vmin;
   max-width: 82%;
   padding: 0.45em 0.95em;
   font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  font-size: clamp(1.3rem, 4.5vmin, 3.4rem);
+  font-size: 4.5vmin;
   font-weight: 600;
   line-height: 1.15;
   color: var(--fg);
@@ -121,6 +120,29 @@ body {
 .name-tag.fading {
   opacity: 0;
 }
+
+/* Sem caixa atras: so a letra, com sombra para continuar legivel. */
+.name-tag.no-bg {
+  border-left: 0;
+  padding-left: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75), 0 0 3px rgba(0, 0, 0, 0.95);
+}
+
+/* Posicoes na tela. */
+.name-tag.pos-bottom-left { left: 5vmin; bottom: 5vmin; }
+.name-tag.pos-bottom-right { right: 5vmin; bottom: 5vmin; text-align: right; }
+.name-tag.pos-bottom-center { left: 50%; bottom: 5vmin; transform: translateX(-50%); text-align: center; }
+.name-tag.pos-top-left { left: 5vmin; top: 5vmin; }
+.name-tag.pos-top-right { right: 5vmin; top: 5vmin; text-align: right; }
+.name-tag.pos-top-center { left: 50%; top: 5vmin; transform: translateX(-50%); text-align: center; }
+.name-tag.pos-center {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  max-width: 90%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .name-tag { transition: none; }
 }
