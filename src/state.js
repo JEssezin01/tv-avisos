@@ -4,29 +4,55 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getMidiaPublica } from './media.js';
+import { getMidiaPublica, getMidia } from './media.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const ARQUIVO = join(aqui, '..', 'data', 'state.json');
 
 const LIMITE_MENSAGEM = 500;
+const LIMITE_TITULO = 120;
+const LIMITE_PLAYLIST = 50;
 
 const PADRAO = {
-  mode: 'aviso', // 'aviso' (texto) ou 'media' (video/imagem)
+  mode: 'aviso', // 'aviso' (texto) | 'media' (um item) | 'playlist' (rodizio)
   message: 'Bem-vindo!',
-  layout: 'horizontal', // 'horizontal' (deitado) ou 'vertical' (em pe)
-  mediaId: null, // id da midia em exibicao, quando mode === 'media'
+  layout: 'horizontal', // 'horizontal' (deitado) | 'vertical' (em pe)
+  mediaId: null, // id da midia, quando mode === 'media'
+  playlist: [], // [{ id, title }] quando mode === 'playlist'
+  playSettings: { nameSec: 5, photoSec: 10, videoMaxSec: 90 },
   updatedAt: new Date().toISOString(),
 };
 
-let estado = { ...PADRAO };
+let estado = { ...PADRAO, playlist: [], playSettings: { ...PADRAO.playSettings } };
 
-function normalizarLayout(valor) {
-  return valor === 'vertical' ? 'vertical' : 'horizontal';
+function normalizarLayout(v) {
+  return v === 'vertical' ? 'vertical' : 'horizontal';
 }
-
-function normalizarModo(valor) {
-  return valor === 'media' ? 'media' : 'aviso';
+function normalizarModo(v) {
+  return v === 'media' || v === 'playlist' ? v : 'aviso';
+}
+function clamp(n, lo, hi, def) {
+  n = Number(n);
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n))) : def;
+}
+function limparPlaylist(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((it) => it && typeof it.id === 'string' && getMidia(it.id))
+    .map((it) => ({
+      id: it.id,
+      title: typeof it.title === 'string' ? it.title.slice(0, LIMITE_TITULO) : '',
+    }))
+    .slice(0, LIMITE_PLAYLIST);
+}
+function limparSettings(s, base) {
+  const b = base || PADRAO.playSettings;
+  if (!s || typeof s !== 'object') return { ...b };
+  return {
+    nameSec: clamp(s.nameSec, 1, 30, b.nameSec),
+    photoSec: clamp(s.photoSec, 2, 120, b.photoSec),
+    videoMaxSec: clamp(s.videoMaxSec, 5, 600, b.videoMaxSec),
+  };
 }
 
 export async function carregarEstado() {
@@ -37,6 +63,8 @@ export async function carregarEstado() {
       message: typeof salvo.message === 'string' ? salvo.message : PADRAO.message,
       layout: normalizarLayout(salvo.layout),
       mediaId: typeof salvo.mediaId === 'string' ? salvo.mediaId : null,
+      playlist: limparPlaylist(salvo.playlist),
+      playSettings: limparSettings(salvo.playSettings),
       updatedAt: salvo.updatedAt ?? new Date().toISOString(),
     };
   } catch {
@@ -47,17 +75,31 @@ export async function carregarEstado() {
 
 // Estado "cru" (uso interno).
 export function getEstado() {
-  return { ...estado };
+  return { ...estado, playlist: estado.playlist.map((p) => ({ ...p })) };
 }
 
-// Estado que vai para a TV: resolve a midia e cai para 'aviso' se ela sumiu.
+// Estado que vai para a TV: resolve midias e cai para 'aviso' se nao sobrar nada.
 export function getEstadoPublico() {
   const media = estado.mode === 'media' ? getMidiaPublica(estado.mediaId) : null;
+
+  const playlist = estado.playlist
+    .map((it) => {
+      const m = getMidiaPublica(it.id);
+      return m ? { id: m.id, title: it.title || m.name, type: m.type, url: m.url } : null;
+    })
+    .filter(Boolean);
+
+  let mode = estado.mode;
+  if (mode === 'media' && !media) mode = 'aviso';
+  if (mode === 'playlist' && playlist.length === 0) mode = 'aviso';
+
   return {
-    mode: media ? 'media' : 'aviso',
+    mode,
     message: estado.message,
     layout: estado.layout,
     media,
+    playlist,
+    playSettings: { ...estado.playSettings },
     updatedAt: estado.updatedAt,
   };
 }
@@ -69,7 +111,13 @@ export async function atualizarEstado(patch = {}) {
   if (patch.layout === 'horizontal' || patch.layout === 'vertical') {
     estado.layout = patch.layout;
   }
-  if (patch.mode === 'aviso' || patch.mode === 'media') {
+  if (Array.isArray(patch.playlist)) {
+    estado.playlist = limparPlaylist(patch.playlist);
+  }
+  if (patch.playSettings) {
+    estado.playSettings = limparSettings(patch.playSettings, estado.playSettings);
+  }
+  if (patch.mode === 'aviso' || patch.mode === 'media' || patch.mode === 'playlist') {
     estado.mode = patch.mode;
   }
   if (patch.mediaId === null || typeof patch.mediaId === 'string') {

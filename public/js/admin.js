@@ -22,7 +22,19 @@ const mediaList = document.getElementById('mediaList');
 const storageFill = document.getElementById('storageFill');
 const storageText = document.getElementById('storageText');
 
+const plList = document.getElementById('plList');
+const plHint = document.getElementById('plHint');
+const plName = document.getElementById('plName');
+const plPhoto = document.getElementById('plPhoto');
+const plVideoMax = document.getElementById('plVideoMax');
+const playPlaylistBtn = document.getElementById('playPlaylistBtn');
+
 const okMsg = document.getElementById('okMsg');
+
+// Copia de trabalho da playlist e das duracoes (sincronizadas com o servidor).
+let playlist = []; // [{ id, title }]
+let playSettings = { nameSec: 5, photoSec: 10, videoMaxSec: 90 };
+let libItems = []; // ultimo /api/media (para achar nome ao adicionar)
 
 // ---- utilidades -------------------------------------------------
 
@@ -124,6 +136,14 @@ async function carregarEstado() {
   try {
     const s = await fetch('/api/state').then((r) => r.json());
     messageEl.value = s.message || '';
+    if (Array.isArray(s.playlist)) {
+      playlist = s.playlist.map((p) => ({ id: p.id, title: p.title || '' }));
+    }
+    if (s.playSettings) playSettings = { ...playSettings, ...s.playSettings };
+    plName.value = playSettings.nameSec;
+    plPhoto.value = playSettings.photoSec;
+    plVideoMax.value = playSettings.videoMaxSec;
+    renderPlaylist();
     pintarEstado(s);
   } catch {
     /* painel abre mesmo sem estado carregado */
@@ -135,7 +155,9 @@ function pintarEstado(s) {
     b.classList.toggle('active', b.dataset.layout === s.layout);
   });
 
-  if (s.mode === 'media' && s.media) {
+  if (s.mode === 'playlist' && s.playlist && s.playlist.length) {
+    nowWhat.textContent = 'playlist (' + s.playlist.length + ' itens)';
+  } else if (s.mode === 'media' && s.media) {
     const rotulo = s.media.type === 'video' ? 'video' : 'imagem';
     nowWhat.textContent = rotulo + ': ' + (s.media.name || '');
   } else {
@@ -210,6 +232,7 @@ function renderStorage(usage) {
 }
 
 function renderLista(items) {
+  libItems = items;
   mediaList.textContent = '';
   for (const item of items) {
     const li = document.createElement('li');
@@ -236,16 +259,134 @@ function renderLista(items) {
       if (s) flashOk('No ar: ' + item.name);
     });
 
+    const addBtn = document.createElement('button');
+    addBtn.className = 'mi-add';
+    addBtn.type = 'button';
+    const naPlaylist = playlist.some((p) => p.id === item.id);
+    addBtn.classList.toggle('on', naPlaylist);
+    addBtn.textContent = naPlaylist ? '✓ playlist' : '+ Playlist';
+    addBtn.addEventListener('click', () => alternarNaPlaylist(item));
+
     const delBtn = document.createElement('button');
     delBtn.className = 'mi-del';
     delBtn.type = 'button';
     delBtn.textContent = 'Apagar';
     delBtn.addEventListener('click', () => confirmarApagar(delBtn, item.id));
 
-    li.append(info, showBtn, delBtn);
+    li.append(info, showBtn, addBtn, delBtn);
     mediaList.append(li);
   }
 }
+
+// ---- playlist (rodizio) -----------------------------------
+
+function alternarNaPlaylist(item) {
+  const i = playlist.findIndex((p) => p.id === item.id);
+  if (i === -1) playlist.push({ id: item.id, title: item.name || '' });
+  else playlist.splice(i, 1);
+  renderPlaylist();
+  renderLista(libItems); // atualiza os botoes "+ Playlist"
+  salvarPlaylist(true);
+}
+
+function renderPlaylist() {
+  plList.textContent = '';
+  playlist.forEach((p, idx) => {
+    const li = document.createElement('li');
+
+    const title = document.createElement('input');
+    title.className = 'pl-title';
+    title.type = 'text';
+    title.maxLength = 120;
+    title.value = p.title;
+    title.placeholder = 'Nome do item';
+    title.addEventListener('input', () => {
+      p.title = title.value;
+      salvarPlaylist(false); // debounced
+    });
+
+    const up = document.createElement('button');
+    up.type = 'button';
+    up.textContent = '↑';
+    up.disabled = idx === 0;
+    up.addEventListener('click', () => moverPlaylist(idx, -1));
+
+    const down = document.createElement('button');
+    down.type = 'button';
+    down.textContent = '↓';
+    down.disabled = idx === playlist.length - 1;
+    down.addEventListener('click', () => moverPlaylist(idx, 1));
+
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.textContent = '✕';
+    rm.addEventListener('click', () => {
+      playlist.splice(idx, 1);
+      renderPlaylist();
+      renderLista(libItems);
+      salvarPlaylist(true);
+    });
+
+    li.append(title, up, down, rm);
+    plList.append(li);
+  });
+
+  plHint.hidden = playlist.length > 0;
+  playPlaylistBtn.disabled = playlist.length === 0;
+}
+
+function moverPlaylist(idx, dir) {
+  const j = idx + dir;
+  if (j < 0 || j >= playlist.length) return;
+  const tmp = playlist[idx];
+  playlist[idx] = playlist[j];
+  playlist[j] = tmp;
+  renderPlaylist();
+  salvarPlaylist(true);
+}
+
+function lerDuracoes() {
+  const num = (el, lo, hi, def) => {
+    const n = Math.round(Number(el.value));
+    return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def;
+  };
+  playSettings = {
+    nameSec: num(plName, 1, 30, 5),
+    photoSec: num(plPhoto, 2, 120, 10),
+    videoMaxSec: num(plVideoMax, 5, 600, 90),
+  };
+}
+
+async function salvarPlaylist(imediato) {
+  lerDuracoes();
+  const enviar = () =>
+    enviarEstado({
+      playlist: playlist.map((p) => ({ id: p.id, title: p.title })),
+      playSettings,
+    });
+  clearTimeout(salvarPlaylist._t);
+  if (imediato) {
+    await enviar();
+  } else {
+    salvarPlaylist._t = setTimeout(enviar, 500);
+  }
+}
+
+[plName, plPhoto, plVideoMax].forEach((el) => {
+  el.addEventListener('change', () => salvarPlaylist(true));
+});
+
+playPlaylistBtn.addEventListener('click', async () => {
+  lerDuracoes();
+  pulsoBotao(playPlaylistBtn, 'enviando');
+  const s = await enviarEstado({
+    mode: 'playlist',
+    playlist: playlist.map((p) => ({ id: p.id, title: p.title })),
+    playSettings,
+  });
+  pulsoBotao(playPlaylistBtn, s ? 'ok' : 'erro', s ? 'Tocando ✓' : 'Erro');
+  if (s) flashOk('Playlist no ar (' + playlist.length + ' itens).');
+});
 
 function destacarMidiaNoAr(id) {
   mediaList.querySelectorAll('li').forEach((li) => {
@@ -283,56 +424,68 @@ async function apagarMidia(id) {
   await carregarEstado(); // a TV pode ter voltado para o aviso
 }
 
-fileInput.addEventListener('change', () => {
-  const file = fileInput.files && fileInput.files[0];
-  if (file) enviarArquivo(file);
+fileInput.addEventListener('change', async () => {
+  const files = Array.from(fileInput.files || []);
+  fileInput.value = '';
+  if (!files.length) return;
+
+  mediaErr.textContent = '';
+  let enviados = 0;
+  for (let k = 0; k < files.length; k++) {
+    const ok = await enviarArquivo(files[k], k + 1, files.length);
+    if (ok) enviados++;
+  }
+  progress.hidden = true;
+  fileBtnText.textContent = 'Escolher do celular…';
+  await carregarMidias();
+  if (enviados) flashOk(enviados + (enviados > 1 ? ' enviados ✓' : ' enviado ✓'));
 });
 
-function enviarArquivo(file) {
-  mediaErr.textContent = '';
-  progress.hidden = false;
-  progressBar.style.width = '0%';
-  fileBtnText.textContent = 'Enviando…';
+// Envia UM arquivo. Resolve true/false (nao rejeita), para o loop seguir.
+function enviarArquivo(file, n, total) {
+  return new Promise((resolve) => {
+    progress.hidden = false;
+    progressBar.style.width = '0%';
+    fileBtnText.textContent =
+      total > 1 ? 'Enviando ' + n + '/' + total + '…' : 'Enviando…';
 
-  const fd = new FormData();
-  fd.append('file', file);
+    const fd = new FormData();
+    fd.append('file', file);
 
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/media');
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/media');
 
-  xhr.upload.onprogress = (e) => {
-    if (e.lengthComputable) {
-      progressBar.style.width = Math.round((e.loaded / e.total) * 100) + '%';
-    }
-  };
-
-  xhr.onload = () => {
-    progress.hidden = true;
-    fileBtnText.textContent = 'Escolher do celular…';
-    fileInput.value = '';
-    if (xhr.status === 201) {
-      carregarMidias();
-      flashOk('Enviado ✓');
-    } else if (xhr.status === 401) {
-      atualizarSessao();
-    } else {
-      let msg = 'Falha no envio.';
-      try {
-        msg = JSON.parse(xhr.responseText).error || msg;
-      } catch {
-        /* mantem msg padrao */
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        progressBar.style.width = Math.round((e.loaded / e.total) * 100) + '%';
       }
-      mediaErr.textContent = msg;
-    }
-  };
+    };
 
-  xhr.onerror = () => {
-    progress.hidden = true;
-    fileBtnText.textContent = 'Escolher do celular…';
-    mediaErr.textContent = 'Erro de conexao no envio.';
-  };
+    xhr.onload = () => {
+      if (xhr.status === 201) {
+        resolve(true);
+      } else if (xhr.status === 401) {
+        atualizarSessao();
+        resolve(false);
+      } else {
+        let msg = 'Falha no envio.';
+        try {
+          msg = JSON.parse(xhr.responseText).error || msg;
+        } catch {
+          /* mantem msg padrao */
+        }
+        mediaErr.textContent = (total > 1 ? '"' + file.name + '": ' : '') + msg;
+        resolve(false);
+      }
+    };
 
-  xhr.send(fd);
+    xhr.onerror = () => {
+      mediaErr.textContent = 'Erro de conexao no envio.';
+      resolve(false);
+    };
+
+    xhr.send(fd);
+  });
 }
 
 // ---- inicio ------------------------------------------------

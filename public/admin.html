@@ -73,6 +73,7 @@
               type="file"
               id="fileInput"
               accept="video/mp4,video/webm,video/quicktime,image/jpeg,image/png,image/webp"
+              multiple
               hidden
             />
             <span id="fileBtnText">Escolher do celular&hellip;</span>
@@ -87,6 +88,23 @@
             <div class="storage-track"><div id="storageFill"></div></div>
             <span id="storageText">&mdash;</span>
           </div>
+        </div>
+
+        <!-- PLAYLIST (RODIZIO) -->
+        <div class="block">
+          <h2>Playlist (rod&iacute;zio)</h2>
+          <p class="hint" id="plHint">
+            Toque em <b>+ Playlist</b> nas m&iacute;dias acima para montar a sequ&ecirc;ncia.
+          </p>
+          <ol class="pl-list" id="plList"></ol>
+
+          <div class="pl-times">
+            <label>Nome (s)<input type="number" id="plName" min="1" max="30" step="1" /></label>
+            <label>Foto (s)<input type="number" id="plPhoto" min="2" max="120" step="1" /></label>
+            <label>V&iacute;deo m&aacute;x (s)<input type="number" id="plVideoMax" min="5" max="600" step="1" /></label>
+          </div>
+
+          <button type="button" id="playPlaylistBtn" disabled>Tocar playlist na TV</button>
         </div>
 
         <p class="ok" id="okMsg" role="status"></p>

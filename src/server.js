@@ -90,6 +90,13 @@ app.post('/api/state', requireAuth, async (req, res) => {
   if (typeof body.message === 'string') patch.message = body.message;
   if (body.layout === 'horizontal' || body.layout === 'vertical') patch.layout = body.layout;
 
+  // A playlist e as duracoes podem ser salvas mesmo sem trocar o modo
+  // (voce edita a playlist enquanto a TV mostra outra coisa).
+  if (Array.isArray(body.playlist)) patch.playlist = body.playlist;
+  if (body.playSettings && typeof body.playSettings === 'object') {
+    patch.playSettings = body.playSettings;
+  }
+
   if (body.mode === 'aviso') {
     patch.mode = 'aviso';
     patch.mediaId = null;
@@ -99,6 +106,14 @@ app.post('/api/state', requireAuth, async (req, res) => {
     }
     patch.mode = 'media';
     patch.mediaId = body.mediaId;
+  } else if (body.mode === 'playlist') {
+    const lista = Array.isArray(body.playlist)
+      ? body.playlist.filter((it) => it && typeof it.id === 'string' && getMidia(it.id))
+      : getEstado().playlist;
+    if (!lista || lista.length === 0) {
+      return res.status(400).json({ error: 'Playlist vazia ou sem midias validas' });
+    }
+    patch.mode = 'playlist';
   }
 
   await atualizarEstado(patch);
@@ -155,10 +170,20 @@ app.delete('/api/media/:id', requireAuth, async (req, res) => {
   const id = req.params.id;
   if (!getMidia(id)) return res.status(404).json({ error: 'Midia nao encontrada' });
 
-  // Se essa midia esta no ar, volta para o aviso de texto antes de apagar.
   const atual = getEstado();
+
+  // Se essa midia esta no ar (item unico), volta para o aviso de texto.
   if (atual.mode === 'media' && atual.mediaId === id) {
     await atualizarEstado({ mode: 'aviso', mediaId: null });
+    broadcastEstado(io);
+  }
+
+  // Tira a midia da playlist salva (se estiver la).
+  if (atual.playlist.some((it) => it.id === id)) {
+    const semEla = atual.playlist.filter((it) => it.id !== id);
+    const patch = { playlist: semEla };
+    if (atual.mode === 'playlist' && semEla.length === 0) patch.mode = 'aviso';
+    await atualizarEstado(patch);
     broadcastEstado(io);
   }
 

@@ -12,6 +12,7 @@ const elStage = document.getElementById('stage');
 const elAviso = document.getElementById('aviso');
 const elVideo = document.getElementById('mediaVideo');
 const elImg = document.getElementById('mediaImage');
+const elNameTag = document.getElementById('nameTag');
 const elStatus = document.getElementById('status');
 const elFsBtn = document.getElementById('fsBtn');
 
@@ -20,12 +21,18 @@ let conectado = false;
 let ultimoEstadoOk = Date.now();
 let pollTimer = null;
 
-// --- render ---------------------------------------------------
+// --- helpers ------------------------------------------------
 
 function aplicarLayout(layout) {
   const vertical = layout === 'vertical';
   elStage.classList.toggle('layout-vertical', vertical);
   elStage.classList.toggle('layout-horizontal', !vertical);
+}
+
+function clamp(n, lo, hi, def) {
+  n = Number(n);
+  if (!isFinite(n)) return def;
+  return Math.max(lo, Math.min(hi, n));
 }
 
 function pausarVideo() {
@@ -41,7 +48,16 @@ function tocarVideo() {
   if (p && p.catch) p.catch(function () {});
 }
 
+function esconderNome() {
+  elNameTag.hidden = true;
+  elNameTag.classList.remove('fading');
+}
+
+// --- render de um estado simples --------------------------
+
 function mostrarAviso(texto) {
+  pararPlaylist();
+  esconderNome();
   elVideo.hidden = true;
   elImg.hidden = true;
   pausarVideo();
@@ -52,6 +68,7 @@ function mostrarAviso(texto) {
 }
 
 function mostrarMidia(media) {
+  esconderNome();
   elAviso.hidden = true;
   elStage.classList.add('has-media');
 
@@ -62,6 +79,7 @@ function mostrarMidia(media) {
       elVideo.load();
       urlAtual = media.url;
     }
+    elVideo.loop = true; // modo "um item so": video em loop
     elVideo.hidden = false;
     tocarVideo();
   } else {
@@ -75,11 +93,122 @@ function mostrarMidia(media) {
   }
 }
 
+// --- playlist (rodizio automatico) -----------------------
+
+let playlistCtl = null; // { cancel }
+let playlistSig = null;
+
+function pararPlaylist() {
+  if (playlistCtl) {
+    playlistCtl.cancel();
+    playlistCtl = null;
+  }
+  playlistSig = null;
+}
+
+function rodarPlaylist(items, settings) {
+  const nameSec = clamp(settings.nameSec, 1, 30, 5);
+  const photoSec = clamp(settings.photoSec, 2, 120, 10);
+  const videoMaxSec = clamp(settings.videoMaxSec, 5, 600, 90);
+
+  let i = 0;
+  let cancelado = false;
+  let timer = null;
+  let timerNome = null;
+
+  const cancel = function () {
+    cancelado = true;
+    clearTimeout(timer);
+    clearTimeout(timerNome);
+    elVideo.onended = null;
+    elVideo.onerror = null;
+  };
+  playlistCtl = { cancel: cancel };
+
+  function mostrarNome(txt) {
+    clearTimeout(timerNome);
+    if (!txt) {
+      esconderNome();
+      return;
+    }
+    elNameTag.textContent = txt;
+    elNameTag.classList.remove('fading');
+    elNameTag.hidden = false;
+    timerNome = setTimeout(function () {
+      if (!cancelado) elNameTag.classList.add('fading');
+    }, nameSec * 1000);
+  }
+
+  function proximo() {
+    if (cancelado) return;
+    clearTimeout(timer);
+    elVideo.onended = null;
+    elVideo.onerror = null;
+    i = (i + 1) % items.length;
+    tocarItem();
+  }
+
+  function tocarItem() {
+    if (cancelado) return;
+    const it = items[i];
+    elAviso.hidden = true;
+    elStage.classList.add('has-media');
+
+    if (it.type === 'video') {
+      elImg.hidden = true;
+      if (it.url !== urlAtual) {
+        elVideo.src = it.url;
+        elVideo.load();
+        urlAtual = it.url;
+      }
+      elVideo.loop = false; // na playlist, cada video toca UMA vez
+      elVideo.hidden = false;
+      tocarVideo();
+      elVideo.onended = proximo;
+      elVideo.onerror = function () {
+        setTimeout(proximo, 3000);
+      };
+      timer = setTimeout(proximo, videoMaxSec * 1000); // teto
+    } else {
+      pausarVideo();
+      elVideo.hidden = true;
+      if (it.url !== urlAtual) {
+        elImg.src = it.url;
+        urlAtual = it.url;
+      }
+      elImg.hidden = false;
+      timer = setTimeout(proximo, photoSec * 1000);
+    }
+
+    mostrarNome(it.title);
+  }
+
+  urlAtual = null; // forca recarregar o primeiro item
+  tocarItem();
+}
+
+// --- aplica o estado recebido do servidor ---------------
+
 function aplicarEstado(estado) {
   if (!estado || typeof estado !== 'object') return;
   ultimoEstadoOk = Date.now();
   aplicarLayout(estado.layout);
-  if (estado.mode === 'media' && estado.media) {
+
+  if (estado.mode === 'playlist' && estado.playlist && estado.playlist.length) {
+    const settings = estado.playSettings || {};
+    const sig = JSON.stringify([
+      estado.playlist.map(function (x) {
+        return x.id + '|' + (x.title || '') + '|' + x.url;
+      }),
+      settings,
+    ]);
+    // mesma playlist ja rodando -> nao reinicia (poll/reconexao nao "pula")
+    if (sig === playlistSig && playlistCtl) return;
+    pararPlaylist();
+    playlistSig = sig;
+    rodarPlaylist(estado.playlist, settings); // define playlistCtl internamente
+  } else if (estado.mode === 'media' && estado.media) {
+    pararPlaylist();
     mostrarMidia(estado.media);
   } else {
     mostrarAviso(estado.message);

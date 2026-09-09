@@ -98,6 +98,33 @@ body {
   padding: 0;
 }
 
+/* Nome do item da playlist (por cima da midia, canto inferior esquerdo).
+   Fica dentro do palco -> gira junto e continua legivel na vertical. */
+.name-tag {
+  position: absolute;
+  left: 5vmin;
+  bottom: 5vmin;
+  max-width: 82%;
+  padding: 0.45em 0.95em;
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-size: clamp(1.3rem, 4.5vmin, 3.4rem);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--fg);
+  background: rgba(7, 22, 51, 0.82);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.name-tag.fading {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .name-tag { transition: none; }
+}
+
 /* Marca Oliva Ratio - discreta, dentro do palco (gira junto com o
    conteudo, entao fica sempre "de pe" para quem olha). */
 .brand-tv {
