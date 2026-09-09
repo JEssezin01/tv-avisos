@@ -79,13 +79,17 @@ body {
   word-break: break-word;
 }
 
-/* Video / imagem: aparece inteiro (nunca cortado), centralizado, em
-   qualquer resolucao. translateZ(0) coloca o video na sua propria
-   camada de GPU (decodificacao por hardware em muitas TVs).
-   Obs: nao definir "display" aqui -> o [hidden] precisa continuar valendo. */
+/* Video / imagem: aparece INTEIRO (nunca cortado, nunca esticado),
+   centralizado, em qualquer resolucao ou proporcao.
+   - O tv.js calcula o encaixe exato e define width/height em px
+     (varios navegadores de TV ignoram object-fit em <video>).
+   - Enquanto o JS nao roda / se falhar: max-width/height + tamanho
+     natural garantem que no minimo nao distorce.
+   - translateZ(0): poe o video na propria camada de GPU (decode por HW).
+   - Nao definir "display" aqui -> o [hidden] precisa continuar valendo. */
 .media {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   object-position: center;
   background: #000;

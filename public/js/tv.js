@@ -24,10 +24,44 @@ let estadoAtual = null; // ultimo estado recebido (re-checado ao cruzar o horari
 
 // --- helpers ------------------------------------------------
 
+let layoutAtual = null;
+
 function aplicarLayout(layout) {
   const vertical = layout === 'vertical';
   elStage.classList.toggle('layout-vertical', vertical);
   elStage.classList.toggle('layout-horizontal', !vertical);
+  if (layout !== layoutAtual) {
+    layoutAtual = layout;
+    // A rotacao troca largura<->altura do palco -> re-encaixa a midia.
+    if (window.requestAnimationFrame) requestAnimationFrame(ajustarMidia);
+    setTimeout(ajustarMidia, 150); // 2a passada, depois do reflow da rotacao
+  }
+}
+
+// Encaixa a midia INTEIRA na tela: nunca corta, nunca distorce, em qualquer
+// proporcao (retrato, paisagem, quadrado) e nas duas orientacoes do palco.
+// Feito na mao porque varios navegadores de TV (Tizen/webOS) ignoram o
+// object-fit em <video> e esticam a imagem ("fica achatado / cortado").
+function ajustarMidia() {
+  const emVideo = !elVideo.hidden;
+  const el = emVideo ? elVideo : !elImg.hidden ? elImg : null;
+  if (!el) return;
+  const nw = emVideo ? elVideo.videoWidth : elImg.naturalWidth;
+  const nh = emVideo ? elVideo.videoHeight : elImg.naturalHeight;
+  if (!nw || !nh) return; // tamanho real ainda desconhecido (metadados a caminho)
+  const cw = elStage.clientWidth;
+  const ch = elStage.clientHeight;
+  if (!cw || !ch) return;
+  const escala = Math.min(cw / nw, ch / nh); // "contain": cabe inteiro
+  el.style.width = Math.round(nw * escala) + 'px';
+  el.style.height = Math.round(nh * escala) + 'px';
+}
+
+function limparTamanhoMidia() {
+  elVideo.style.width = '';
+  elVideo.style.height = '';
+  elImg.style.width = '';
+  elImg.style.height = '';
 }
 
 function clamp(n, lo, hi, def) {
@@ -135,6 +169,7 @@ function mostrarAviso(texto) {
   esconderNome();
   elVideo.hidden = true;
   elImg.hidden = true;
+  limparTamanhoMidia();
   pausarVideo();
   elStage.classList.remove('has-media');
   elAviso.hidden = false;
@@ -150,6 +185,7 @@ function mostrarMidia(media) {
   if (media.type === 'video') {
     elImg.hidden = true;
     if (media.url !== urlAtual) {
+      limparTamanhoMidia(); // some com o tamanho do item anterior
       elVideo.src = media.url;
       elVideo.load();
       urlAtual = media.url;
@@ -161,11 +197,15 @@ function mostrarMidia(media) {
     pausarVideo();
     elVideo.hidden = true;
     if (media.url !== urlAtual) {
+      limparTamanhoMidia();
       elImg.src = media.url;
       urlAtual = media.url;
     }
     elImg.hidden = false;
   }
+
+  ajustarMidia();
+  setTimeout(ajustarMidia, 120); // reforco depois que os metadados chegam
 }
 
 // --- playlist (rodizio automatico) -----------------------
@@ -264,6 +304,7 @@ function rodarPlaylist(items, settings, style, cmd) {
     if (it.type === 'video') {
       elImg.hidden = true;
       if (it.url !== urlAtual) {
+        limparTamanhoMidia();
         elVideo.src = it.url;
         elVideo.load();
         urlAtual = it.url;
@@ -280,6 +321,7 @@ function rodarPlaylist(items, settings, style, cmd) {
       pausarVideo();
       elVideo.hidden = true;
       if (it.url !== urlAtual) {
+        limparTamanhoMidia();
         elImg.src = it.url;
         urlAtual = it.url;
       }
@@ -287,6 +329,8 @@ function rodarPlaylist(items, settings, style, cmd) {
       timer = setTimeout(proximo, photoSec * 1000);
     }
 
+    ajustarMidia();
+    setTimeout(ajustarMidia, 120);
     mostrarNome(it.title);
     reportarPos();
   }
@@ -444,6 +488,20 @@ elVideo.addEventListener('error', function () {
 elVideo.addEventListener('stalled', tocarVideo);
 elVideo.addEventListener('canplay', tocarVideo);
 elVideo.addEventListener('ended', tocarVideo); // reforca o loop
+
+// --- encaixe da midia (qualquer proporcao, nas duas orientacoes) -----
+// O tamanho real do video so e conhecido depois dos metadados; alguns
+// navegadores de TV corrigem a rotacao do celular mais tarde e disparam
+// 'resize'. Re-encaixamos em todos esses momentos.
+elVideo.addEventListener('loadedmetadata', ajustarMidia);
+elVideo.addEventListener('loadeddata', ajustarMidia);
+elVideo.addEventListener('canplay', ajustarMidia);
+elVideo.addEventListener('resize', ajustarMidia);
+elImg.addEventListener('load', ajustarMidia);
+window.addEventListener('resize', ajustarMidia);
+window.addEventListener('orientationchange', function () {
+  setTimeout(ajustarMidia, 200);
+});
 
 // --- watchdog: navegador travado -> recarrega -------------
 
