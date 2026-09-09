@@ -425,8 +425,10 @@ function renderNameStyle() {
 }
 
 function atualizarPreview() {
-  const comFundo = nsShowBg.checked;
-  nsBgFields.hidden = !comFundo;
+  // os campos de fundo aparecem se o checkbox estiver marcado;
+  // mas o "visual com caixa" so vale se tambem tiver opacidade > 0
+  nsBgFields.hidden = !nsShowBg.checked;
+  const comFundo = nsShowBg.checked && Number(nsBgOp.value) > 0;
   nsBgOpVal.textContent = nsBgOp.value + '%';
   nsSizeVal.textContent = nsSize.value;
 

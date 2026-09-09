@@ -62,9 +62,11 @@ function aplicarNameStyle(ns) {
   if (!ns) return;
   if (ns.color) elNameTag.style.color = ns.color;
 
-  const comFundo = ns.showBg !== false;
+  // "sem caixa" tambem quando a opacidade do fundo esta em zero
+  const op = isFinite(Number(ns.bgOpacity)) ? Number(ns.bgOpacity) : 0.82;
+  const comFundo = ns.showBg !== false && op > 0;
   elNameTag.classList.toggle('no-bg', !comFundo);
-  elNameTag.style.background = comFundo ? hexRgba(ns.bg, ns.bgOpacity) : 'transparent';
+  elNameTag.style.background = comFundo ? hexRgba(ns.bg, op) : 'transparent';
 
   elNameTag.style.fontFamily = FONTES_TV[ns.font] || FONTES_TV.serif;
 
