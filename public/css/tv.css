@@ -147,18 +147,18 @@ body {
   .name-tag { transition: none; }
 }
 
-/* Marca Oliva Ratio - discreta, dentro do palco (gira junto com o
-   conteudo, entao fica sempre "de pe" para quem olha). */
+/* Marca Oliva Ratio - canto superior direito, dentro do palco (gira junto
+   com o conteudo, entao fica sempre "de pe" para quem olha). */
 .brand-tv {
   position: absolute;
-  right: 2.6vmin;
-  bottom: 2.4vmin;
+  right: 3vmin;
+  top: 3vmin;
   display: flex;
   align-items: center;
   gap: 0.55em;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   color: var(--fg);
-  opacity: 0.24;
+  opacity: 0.42;
   pointer-events: none;
   user-select: none;
 }
