@@ -50,6 +50,10 @@ const plRestart = document.getElementById('plRestart');
 const plPrev = document.getElementById('plPrev');
 const plNext = document.getElementById('plNext');
 
+const onairDot = document.getElementById('onairDot');
+const libMeta = document.getElementById('libMeta');
+const plMeta = document.getElementById('plMeta');
+
 const okMsg = document.getElementById('okMsg');
 
 // Copia de trabalho (sincronizada com o servidor).
@@ -222,13 +226,14 @@ function pintarEstado(s) {
   }
 
   if (emPlaylist) {
-    nowWhat.textContent = 'playlist (' + s.playlist.length + ' itens)';
+    nowWhat.textContent = 'Playlist — ' + s.playlist.length + ' itens em rodízio';
   } else if (s.mode === 'media' && s.media) {
-    const rotulo = s.media.type === 'video' ? 'video' : 'imagem';
-    nowWhat.textContent = rotulo + ': ' + (s.media.name || '');
+    const rotulo = s.media.type === 'video' ? 'Vídeo' : 'Imagem';
+    nowWhat.textContent = rotulo + ' — ' + (s.media.name || '');
   } else {
-    nowWhat.textContent = 'aviso de texto';
+    nowWhat.textContent = 'Aviso de texto';
   }
+  if (onairDot) onairDot.classList.toggle('is-live', s.mode !== 'aviso');
 
   destacarMidiaNoAr(s.mode === 'media' && s.media ? s.media.id : null);
 }
@@ -299,6 +304,7 @@ function renderStorage(usage) {
 
 function renderLista(items) {
   libItems = items;
+  if (libMeta) libMeta.textContent = items.length ? String(items.length) : '';
   mediaList.textContent = '';
   for (const item of items) {
     const li = document.createElement('li');
@@ -399,6 +405,7 @@ function renderPlaylist() {
 
   plHint.hidden = playlist.length > 0;
   playPlaylistBtn.disabled = playlist.length === 0;
+  if (plMeta) plMeta.textContent = playlist.length ? String(playlist.length) : '';
 }
 
 function moverPlaylist(idx, dir) {

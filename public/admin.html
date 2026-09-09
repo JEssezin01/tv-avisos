@@ -2,36 +2,39 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Painel &mdash; Mural TV</title>
     <link rel="stylesheet" href="/css/admin.css" />
   </head>
   <body>
-    <main class="card">
-      <!-- TELA DE LOGIN -->
-      <section id="loginView" hidden>
-        <div class="brand brand--login">
+    <div class="app">
+      <!-- ================= LOGIN ================= -->
+      <section id="loginView" class="auth" hidden>
+        <div class="brand brand--lg">
           <svg class="brand-mark" viewBox="0 0 21 13" fill="none" stroke="currentColor"
                stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="0.5" y="0.5" width="20" height="12" rx="1.3" />
             <path d="M13 0.5 V12.5" />
             <path d="M13 0.5 A 12 12 0 0 0 1 12.5" />
           </svg>
-          <span class="brand-by">Oliva Ratio</span>
+          <span class="brand-text">
+            <span class="brand-app">Mural TV</span>
+            <span class="brand-by">Oliva Ratio</span>
+          </span>
         </div>
-        <h1>Painel do Mural</h1>
-        <p class="muted">Entre com a senha para controlar a TV.</p>
+        <h1>Entrar no painel</h1>
+        <p class="hint">Use a senha para controlar a TV.</p>
         <form id="loginForm" autocomplete="on">
-          <label for="senha">Senha</label>
+          <label class="field__label" for="senha">Senha</label>
           <input type="password" id="senha" name="senha" autocomplete="current-password" required />
-          <button type="submit">Entrar</button>
-          <p class="error" id="loginError" role="alert"></p>
+          <button type="submit" class="btn btn--primary btn--block">Entrar</button>
+          <p class="msg msg--err" id="loginError" role="alert"></p>
         </form>
       </section>
 
-      <!-- PAINEL DE CONTROLE -->
+      <!-- ================= PAINEL ================= -->
       <section id="panelView" hidden>
-        <div class="topbar">
+        <header class="app-head">
           <div class="brand">
             <svg class="brand-mark" viewBox="0 0 21 13" fill="none" stroke="currentColor"
                  stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -44,144 +47,165 @@
               <span class="brand-by">Oliva Ratio</span>
             </span>
           </div>
-          <button id="logoutBtn" class="ghost" type="button">Sair</button>
-        </div>
+          <button id="logoutBtn" class="btn btn--ghost btn--sm" type="button">Sair</button>
+        </header>
 
-        <p class="now">Na TV agora: <b id="nowWhat">&mdash;</b></p>
-
-        <!-- ORIENTACAO -->
-        <div class="block">
-          <h2>Orienta&ccedil;&atilde;o da tela</h2>
-          <div class="seg" id="segLayout" role="group" aria-label="Orienta&ccedil;&atilde;o da tela">
-            <button type="button" data-layout="horizontal">Deitado</button>
-            <button type="button" data-layout="vertical">Em p&eacute;</button>
-          </div>
-        </div>
-
-        <!-- AVISO DE TEXTO -->
-        <div class="block">
-          <h2>Aviso de texto</h2>
-          <textarea id="message" rows="3" maxlength="500" placeholder="Digite o aviso&hellip;"></textarea>
-          <button type="button" id="showAvisoBtn">Mostrar este aviso na TV</button>
-        </div>
-
-        <!-- VIDEO / IMAGEM -->
-        <div class="block">
-          <h2>V&iacute;deo / imagem</h2>
-          <label class="file-btn">
-            <input
-              type="file"
-              id="fileInput"
-              accept="video/mp4,video/webm,video/quicktime,image/jpeg,image/png,image/webp"
-              multiple
-              hidden
-            />
-            <span id="fileBtnText">Escolher do celular&hellip;</span>
-          </label>
-          <div class="progress" id="progress" hidden><div id="progressBar"></div></div>
-          <p class="hint" id="mediaHint">&nbsp;</p>
-          <p class="error" id="mediaErr" role="alert"></p>
-
-          <ul class="media-list" id="mediaList"></ul>
-
-          <div class="storage">
-            <div class="storage-track"><div id="storageFill"></div></div>
-            <span id="storageText">&mdash;</span>
-          </div>
-        </div>
-
-        <!-- PLAYLIST (RODIZIO) -->
-        <div class="block">
-          <h2>Playlist (rod&iacute;zio)</h2>
-          <p class="hint" id="plHint">
-            Toque em <b>+ Playlist</b> nas m&iacute;dias acima para montar a sequ&ecirc;ncia.
-          </p>
-          <ol class="pl-list" id="plList"></ol>
-
-          <div class="pl-times">
-            <label>Nome (s)<input type="number" id="plName" min="1" max="30" step="1" /></label>
-            <label>Foto (s)<input type="number" id="plPhoto" min="2" max="120" step="1" /></label>
-            <label>V&iacute;deo m&aacute;x (s)<input type="number" id="plVideoMax" min="5" max="600" step="1" /></label>
+        <!-- ---- No ar agora + acoes rapidas ---- -->
+        <div class="panel panel--primary">
+          <div class="onair">
+            <span class="onair__dot" id="onairDot" aria-hidden="true"></span>
+            <span class="onair__text">
+              <span class="onair__label">Na TV agora</span>
+              <strong id="nowWhat">&mdash;</strong>
+            </span>
           </div>
 
-          <!-- ESTILO DO NOME -->
-          <div class="name-style">
-            <span class="ns-label">Estilo do nome na tela</span>
-            <div class="name-preview" id="namePreviewBox">
-              <span id="namePreview">Corte de cabelo</span>
-            </div>
-
-            <div class="ns-grid">
-              <label>Cor da letra<input type="color" id="nsColor" /></label>
-              <label>Fonte
-                <select id="nsFont">
-                  <option value="serif">Elegante</option>
-                  <option value="sans">Moderna</option>
-                  <option value="impact">Grossa</option>
-                  <option value="mono">M&aacute;quina</option>
-                </select>
-              </label>
-            </div>
-
-            <label class="ns-row">
-              Posi&ccedil;&atilde;o
-              <select id="nsPos">
-                <option value="bottom-left">Rodap&eacute; &mdash; esquerda</option>
-                <option value="bottom-center">Rodap&eacute; &mdash; centro</option>
-                <option value="bottom-right">Rodap&eacute; &mdash; direita</option>
-                <option value="top-left">Topo &mdash; esquerda</option>
-                <option value="top-center">Topo &mdash; centro</option>
-                <option value="top-right">Topo &mdash; direita</option>
-                <option value="center">Centro da tela</option>
-              </select>
-            </label>
-
-            <label class="ns-row">
-              Tamanho
-              <input type="range" id="nsSize" min="2" max="12" step="0.5" />
-              <span id="nsSizeVal"></span>
-            </label>
-
-            <label class="ns-row ns-check">
-              <input type="checkbox" id="nsShowBg" />
-              Mostrar fundo atr&aacute;s do nome
-            </label>
-            <div class="ns-bg-fields" id="nsBgFields">
-              <label class="ns-row">
-                Cor do fundo
-                <input type="color" id="nsBg" />
-              </label>
-              <label class="ns-row">
-                Opacidade do fundo
-                <input type="range" id="nsBgOp" min="0" max="100" step="5" />
-                <span id="nsBgOpVal"></span>
-              </label>
-            </div>
-
-            <label class="ns-row ns-check">
-              <input type="checkbox" id="nsAlways" />
-              Nome sempre vis&iacute;vel (n&atilde;o some)
-            </label>
-          </div>
-
-          <button type="button" id="playPlaylistBtn" disabled>Tocar playlist na TV</button>
-
-          <!-- CONTROLE DO RODIZIO (aparece quando a playlist esta no ar) -->
+          <!-- controle do rodizio (so aparece quando a playlist esta no ar) -->
           <div class="pl-control" id="plControl" hidden>
             <div class="pl-progress" id="plProgress"></div>
             <p class="pl-pos" id="plPos">&nbsp;</p>
-            <div class="pl-transport">
-              <button type="button" id="plRestart">&#10227; Reiniciar</button>
-              <button type="button" id="plPrev">&#9664; Anterior</button>
-              <button type="button" id="plNext">Pr&oacute;ximo &#9654;</button>
+            <div class="transport">
+              <button type="button" class="btn btn--soft" id="plRestart">&#10227; Reiniciar</button>
+              <button type="button" class="btn btn--soft" id="plPrev">&#9664; Anterior</button>
+              <button type="button" class="btn btn--soft" id="plNext">Pr&oacute;ximo &#9654;</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field__label">Orienta&ccedil;&atilde;o da tela</span>
+            <div class="seg" id="segLayout" role="group" aria-label="Orienta&ccedil;&atilde;o da tela">
+              <button type="button" data-layout="horizontal">Deitado</button>
+              <button type="button" data-layout="vertical">Em p&eacute;</button>
             </div>
           </div>
         </div>
 
-        <p class="ok" id="okMsg" role="status"></p>
-        <p class="muted"><a href="/tv" target="_blank" rel="noopener">Abrir a tela da TV</a></p>
+        <!-- ---- Aviso de texto ---- -->
+        <div class="panel">
+          <h2 class="panel__title">Aviso de texto</h2>
+          <textarea id="message" rows="3" maxlength="500" placeholder="Digite o aviso&hellip;"></textarea>
+          <button type="button" class="btn btn--primary btn--block" id="showAvisoBtn">Mostrar na TV</button>
+        </div>
+
+        <!-- ---- Biblioteca de midias ---- -->
+        <details class="panel panel--acc" open>
+          <summary class="panel__title">
+            V&iacute;deos e imagens
+            <span class="panel__meta" id="libMeta"></span>
+          </summary>
+          <div class="panel__body">
+            <label class="uploader">
+              <input
+                type="file"
+                id="fileInput"
+                accept="video/mp4,video/webm,video/quicktime,image/jpeg,image/png,image/webp"
+                multiple
+                hidden
+              />
+              <span id="fileBtnText">Escolher do celular&hellip;</span>
+            </label>
+            <div class="progress" id="progress" hidden><div id="progressBar"></div></div>
+            <p class="hint" id="mediaHint">&nbsp;</p>
+            <p class="msg msg--err" id="mediaErr" role="alert"></p>
+
+            <ul class="media-list" id="mediaList"></ul>
+
+            <div class="storage">
+              <div class="storage-track"><div id="storageFill"></div></div>
+              <span id="storageText">&mdash;</span>
+            </div>
+          </div>
+        </details>
+
+        <!-- ---- Playlist ---- -->
+        <details class="panel panel--acc" open>
+          <summary class="panel__title">
+            Playlist (rod&iacute;zio)
+            <span class="panel__meta" id="plMeta"></span>
+          </summary>
+          <div class="panel__body">
+            <p class="hint" id="plHint">
+              Toque em <b>+ Playlist</b> nas m&iacute;dias acima para montar a sequ&ecirc;ncia.
+            </p>
+            <ol class="pl-list" id="plList"></ol>
+
+            <div class="grid-3">
+              <label class="mini">Nome (s)<input type="number" id="plName" min="1" max="30" step="1" /></label>
+              <label class="mini">Foto (s)<input type="number" id="plPhoto" min="2" max="120" step="1" /></label>
+              <label class="mini">V&iacute;deo m&aacute;x<input type="number" id="plVideoMax" min="5" max="600" step="1" /></label>
+            </div>
+
+            <details class="sub">
+              <summary>Estilo do nome na tela</summary>
+              <div class="sub__body">
+                <div class="name-preview" id="namePreviewBox">
+                  <span id="namePreview">Corte de cabelo</span>
+                </div>
+
+                <div class="grid-2">
+                  <label class="mini">Cor da letra<input type="color" id="nsColor" /></label>
+                  <label class="mini">Fonte
+                    <select id="nsFont">
+                      <option value="serif">Elegante</option>
+                      <option value="sans">Moderna</option>
+                      <option value="impact">Grossa</option>
+                      <option value="mono">M&aacute;quina</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label class="row">
+                  Posi&ccedil;&atilde;o
+                  <select id="nsPos">
+                    <option value="bottom-left">Rodap&eacute; &mdash; esquerda</option>
+                    <option value="bottom-center">Rodap&eacute; &mdash; centro</option>
+                    <option value="bottom-right">Rodap&eacute; &mdash; direita</option>
+                    <option value="top-left">Topo &mdash; esquerda</option>
+                    <option value="top-center">Topo &mdash; centro</option>
+                    <option value="top-right">Topo &mdash; direita</option>
+                    <option value="center">Centro da tela</option>
+                  </select>
+                </label>
+
+                <label class="row">
+                  Tamanho
+                  <input type="range" id="nsSize" min="2" max="12" step="0.5" />
+                  <span id="nsSizeVal" class="row__val"></span>
+                </label>
+
+                <label class="check">
+                  <input type="checkbox" id="nsShowBg" />
+                  Mostrar fundo atr&aacute;s do nome
+                </label>
+                <div class="sub__fields" id="nsBgFields">
+                  <label class="row">
+                    Cor do fundo
+                    <input type="color" id="nsBg" />
+                  </label>
+                  <label class="row">
+                    Opacidade do fundo
+                    <input type="range" id="nsBgOp" min="0" max="100" step="5" />
+                    <span id="nsBgOpVal" class="row__val"></span>
+                  </label>
+                </div>
+
+                <label class="check">
+                  <input type="checkbox" id="nsAlways" />
+                  Nome sempre vis&iacute;vel (n&atilde;o some)
+                </label>
+              </div>
+            </details>
+
+            <button type="button" class="btn btn--primary btn--block" id="playPlaylistBtn" disabled>
+              Tocar playlist na TV
+            </button>
+          </div>
+        </details>
+
+        <p class="msg msg--ok" id="okMsg" role="status"></p>
+        <a class="tv-link" href="/tv" target="_blank" rel="noopener">Abrir a tela da TV &#8599;</a>
       </section>
-    </main>
+    </div>
 
     <script src="/js/admin.js"></script>
   </body>
