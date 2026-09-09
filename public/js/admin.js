@@ -43,6 +43,13 @@ const nsAlways = document.getElementById('nsAlways');
 const namePreview = document.getElementById('namePreview');
 const namePreviewBox = document.getElementById('namePreviewBox');
 
+const plControl = document.getElementById('plControl');
+const plProgress = document.getElementById('plProgress');
+const plPos = document.getElementById('plPos');
+const plRestart = document.getElementById('plRestart');
+const plPrev = document.getElementById('plPrev');
+const plNext = document.getElementById('plNext');
+
 const okMsg = document.getElementById('okMsg');
 
 // Copia de trabalho (sincronizada com o servidor).
@@ -208,7 +215,13 @@ function pintarEstado(s) {
     b.classList.toggle('active', b.dataset.layout === s.layout);
   });
 
-  if (s.mode === 'playlist' && s.playlist && s.playlist.length) {
+  const emPlaylist = s.mode === 'playlist' && s.playlist && s.playlist.length;
+  plControl.hidden = !emPlaylist;
+  if (emPlaylist && s.playlistPos) {
+    atualizarPosicao(s.playlistPos.i || 0, s.playlistPos.total || playlist.length);
+  }
+
+  if (emPlaylist) {
     nowWhat.textContent = 'playlist (' + s.playlist.length + ' itens)';
   } else if (s.mode === 'media' && s.media) {
     const rotulo = s.media.type === 'video' ? 'video' : 'imagem';
@@ -517,7 +530,62 @@ playPlaylistBtn.addEventListener('click', async () => {
   });
   pulsoBotao(playPlaylistBtn, s ? 'ok' : 'erro', s ? 'Tocando ✓' : 'Erro');
   if (s) flashOk('Playlist no ar (' + playlist.length + ' itens).');
+  setTimeout(pollPosicao, 500);
 });
+
+// ---- controle do rodizio (◀ ▶ ⟲ + barrinha) --------------
+
+function atualizarPosicao(i, total) {
+  const n = total || playlist.length || 0;
+  i = Math.max(0, Math.min(n - 1, i | 0));
+
+  plProgress.textContent = '';
+  for (let k = 0; k < n; k++) {
+    const seg = document.createElement('span');
+    seg.className = 'pl-seg' + (k === i ? ' on' : k < i ? ' done' : '');
+    plProgress.append(seg);
+  }
+
+  const titulo = playlist[i] ? playlist[i].title : '';
+  plPos.textContent = n
+    ? 'Tocando: item ' + (i + 1) + ' de ' + n + (titulo ? ' — ' + titulo : '')
+    : '';
+
+  const linhas = plList.children;
+  for (let k = 0; k < linhas.length; k++) {
+    linhas[k].classList.toggle('tocando', k === i);
+  }
+}
+
+async function pollPosicao() {
+  if (panelView.hidden) return;
+  let s;
+  try {
+    s = await fetch('/api/state').then((r) => r.json());
+  } catch {
+    return;
+  }
+  const emPlaylist = s.mode === 'playlist' && s.playlist && s.playlist.length;
+  plControl.hidden = !emPlaylist;
+  if (emPlaylist && s.playlistPos) {
+    atualizarPosicao(s.playlistPos.i || 0, s.playlistPos.total || playlist.length);
+  }
+}
+setInterval(pollPosicao, 2500);
+
+async function comandoPlaylist(btn, action) {
+  pulsoBotao(btn, 'enviando');
+  const s = await enviarEstado({ playlistCmd: { action } });
+  pulsoBotao(btn, s ? 'ok' : 'erro');
+  if (s && s.playlistPos) {
+    atualizarPosicao(s.playlistPos.i || 0, s.playlistPos.total || playlist.length);
+  }
+  setTimeout(pollPosicao, 400); // pega a posicao nova depois que a TV reporta
+}
+
+plRestart.addEventListener('click', () => comandoPlaylist(plRestart, 'restart'));
+plPrev.addEventListener('click', () => comandoPlaylist(plPrev, 'prev'));
+plNext.addEventListener('click', () => comandoPlaylist(plNext, 'next'));
 
 function destacarMidiaNoAr(id) {
   mediaList.querySelectorAll('li').forEach((li) => {

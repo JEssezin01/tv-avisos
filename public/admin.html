@@ -165,6 +165,17 @@
           </div>
 
           <button type="button" id="playPlaylistBtn" disabled>Tocar playlist na TV</button>
+
+          <!-- CONTROLE DO RODIZIO (aparece quando a playlist esta no ar) -->
+          <div class="pl-control" id="plControl" hidden>
+            <div class="pl-progress" id="plProgress"></div>
+            <p class="pl-pos" id="plPos">&nbsp;</p>
+            <div class="pl-transport">
+              <button type="button" id="plRestart">&#10227; Reiniciar</button>
+              <button type="button" id="plPrev">&#9664; Anterior</button>
+              <button type="button" id="plNext">Pr&oacute;ximo &#9654;</button>
+            </div>
+          </div>
         </div>
 
         <p class="ok" id="okMsg" role="status"></p>

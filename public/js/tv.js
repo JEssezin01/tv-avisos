@@ -150,7 +150,7 @@ function pararPlaylist() {
   playlistSig = null;
 }
 
-function rodarPlaylist(items, settings, style) {
+function rodarPlaylist(items, settings, style, cmd) {
   const nameSec = clamp(settings.nameSec, 1, 30, 5);
   const photoSec = clamp(settings.photoSec, 2, 120, 10);
   const videoMaxSec = clamp(settings.videoMaxSec, 5, 600, 90);
@@ -160,6 +160,7 @@ function rodarPlaylist(items, settings, style) {
   let cancelado = false;
   let timer = null;
   let timerNome = null;
+  let lastSeq = cmd && cmd.seq != null ? cmd.seq : 0;
 
   const cancel = function () {
     cancelado = true;
@@ -168,7 +169,36 @@ function rodarPlaylist(items, settings, style) {
     elVideo.onended = null;
     elVideo.onerror = null;
   };
-  playlistCtl = { cancel: cancel };
+
+  // Comando de transporte vindo do painel (◀ ▶ ⟲). So age quando o seq muda.
+  const aplicarCmd = function (c) {
+    if (!c || typeof c !== 'object' || c.seq == null || c.seq === lastSeq) return;
+    lastSeq = c.seq;
+    if (c.action === 'next') i = (i + 1) % items.length;
+    else if (c.action === 'prev') i = (i - 1 + items.length) % items.length;
+    else if (c.action === 'restart') i = 0;
+    else if (c.action === 'goto') i = Math.max(0, Math.min(items.length - 1, c.index | 0));
+    else return;
+    clearTimeout(timer);
+    elVideo.onended = null;
+    elVideo.onerror = null;
+    tocarItem();
+  };
+
+  function reportarPos() {
+    if (cancelado) return;
+    try {
+      if (socket && socket.connected) {
+        socket.emit('plpos', { i: i, total: items.length });
+      } else {
+        setTimeout(reportarPos, 1500); // socket ainda conectando -> tenta de novo
+      }
+    } catch (e) {
+      /* ignora */
+    }
+  }
+
+  playlistCtl = { cancel: cancel, aplicarCmd: aplicarCmd, reportar: reportarPos };
 
   function mostrarNome(txt) {
     clearTimeout(timerNome);
@@ -227,6 +257,7 @@ function rodarPlaylist(items, settings, style) {
     }
 
     mostrarNome(it.title);
+    reportarPos();
   }
 
   urlAtual = null; // forca recarregar o primeiro item
@@ -252,11 +283,16 @@ function aplicarEstado(estado) {
       settings,
       !!ns.alwaysOn, // "sempre visivel" muda o comportamento -> entra na assinatura
     ]);
+    const cmd = estado.playlistCmd || {};
     // mesma playlist ja rodando -> nao reinicia (poll/reconexao nao "pula")
-    if (sig === playlistSig && playlistCtl) return;
+    if (sig === playlistSig && playlistCtl) {
+      // ...mas um comando de transporte (◀ ▶ ⟲) e aplicado sem reiniciar tudo
+      if (playlistCtl.aplicarCmd) playlistCtl.aplicarCmd(cmd);
+      return;
+    }
     pararPlaylist();
     playlistSig = sig;
-    rodarPlaylist(estado.playlist, settings, ns); // define playlistCtl internamente
+    rodarPlaylist(estado.playlist, settings, ns, cmd); // define playlistCtl internamente
   } else if (estado.mode === 'media' && estado.media) {
     pararPlaylist();
     mostrarMidia(estado.media);
@@ -314,6 +350,7 @@ if (typeof io === 'function') {
     definirStatus('connected');
     desligarPoll();
     buscarEstado(); // pega o estado mais recente logo apos (re)conectar
+    if (playlistCtl && playlistCtl.reportar) playlistCtl.reportar(); // avisa a posicao ao painel
   });
 
   const aoCair = function () {

@@ -31,6 +31,9 @@ const PADRAO = {
   mediaId: null, // id da midia, quando mode === 'media'
   playlist: [], // [{ id, title }] quando mode === 'playlist'
   playSettings: { nameSec: 5, photoSec: 10, videoMaxSec: 90 },
+  // Comando de transporte da playlist (o painel manda; a TV obedece).
+  // seq incrementa a cada comando; a TV so age quando o seq muda.
+  playlistCmd: { seq: 0, action: 'none', index: 0 },
   // Aparencia do nome que aparece por cima da midia na playlist.
   nameStyle: {
     color: '#f2e6dc',
@@ -50,7 +53,10 @@ let estado = {
   playlist: [],
   playSettings: { ...PADRAO.playSettings },
   nameStyle: { ...PADRAO.nameStyle },
+  playlistCmd: { ...PADRAO.playlistCmd },
 };
+
+const CMD_ACOES = new Set(['none', 'next', 'prev', 'restart', 'goto']);
 
 function normalizarLayout(v) {
   return v === 'vertical' ? 'vertical' : 'horizontal';
@@ -112,6 +118,11 @@ export async function carregarEstado() {
       playlist: limparPlaylist(salvo.playlist),
       playSettings: limparSettings(salvo.playSettings),
       nameStyle: limparNameStyle(salvo.nameStyle),
+      playlistCmd: {
+        seq: Number.isFinite(Number(salvo?.playlistCmd?.seq)) ? Number(salvo.playlistCmd.seq) : 0,
+        action: 'none',
+        index: 0,
+      },
       updatedAt: salvo.updatedAt ?? new Date().toISOString(),
     };
   } catch {
@@ -127,6 +138,7 @@ export function getEstado() {
     playlist: estado.playlist.map((p) => ({ ...p })),
     playSettings: { ...estado.playSettings },
     nameStyle: { ...estado.nameStyle },
+    playlistCmd: { ...estado.playlistCmd },
   };
 }
 
@@ -153,6 +165,7 @@ export function getEstadoPublico() {
     playlist,
     playSettings: { ...estado.playSettings },
     nameStyle: { ...estado.nameStyle },
+    playlistCmd: { ...estado.playlistCmd },
     updatedAt: estado.updatedAt,
   };
 }
@@ -172,6 +185,15 @@ export async function atualizarEstado(patch = {}) {
   }
   if (patch.nameStyle) {
     estado.nameStyle = limparNameStyle(patch.nameStyle, estado.nameStyle);
+  }
+  if (patch.playlistCmd && typeof patch.playlistCmd === 'object') {
+    const acao = CMD_ACOES.has(patch.playlistCmd.action) ? patch.playlistCmd.action : 'none';
+    const idx = Number(patch.playlistCmd.index);
+    estado.playlistCmd = {
+      seq: estado.playlistCmd.seq + 1, // o servidor e quem incrementa
+      action: acao,
+      index: Number.isFinite(idx) ? Math.max(0, Math.round(idx)) : 0,
+    };
   }
   if (patch.mode === 'aviso' || patch.mode === 'media' || patch.mode === 'playlist') {
     estado.mode = patch.mode;
