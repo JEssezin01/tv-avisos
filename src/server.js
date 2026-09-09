@@ -96,6 +96,9 @@ app.post('/api/state', requireAuth, async (req, res) => {
   if (body.playSettings && typeof body.playSettings === 'object') {
     patch.playSettings = body.playSettings;
   }
+  if (body.nameStyle && typeof body.nameStyle === 'object') {
+    patch.nameStyle = body.nameStyle;
+  }
 
   if (body.mode === 'aviso') {
     patch.mode = 'aviso';

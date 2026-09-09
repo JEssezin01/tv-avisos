@@ -29,12 +29,37 @@ const plPhoto = document.getElementById('plPhoto');
 const plVideoMax = document.getElementById('plVideoMax');
 const playPlaylistBtn = document.getElementById('playPlaylistBtn');
 
+const nsColor = document.getElementById('nsColor');
+const nsBg = document.getElementById('nsBg');
+const nsFont = document.getElementById('nsFont');
+const nsBgOp = document.getElementById('nsBgOp');
+const nsBgOpVal = document.getElementById('nsBgOpVal');
+const nsAlways = document.getElementById('nsAlways');
+const namePreview = document.getElementById('namePreview');
+
 const okMsg = document.getElementById('okMsg');
 
-// Copia de trabalho da playlist e das duracoes (sincronizadas com o servidor).
+// Copia de trabalho (sincronizada com o servidor).
 let playlist = []; // [{ id, title }]
 let playSettings = { nameSec: 5, photoSec: 10, videoMaxSec: 90 };
+let nameStyle = { color: '#f2e6dc', bg: '#071633', bgOpacity: 0.82, font: 'serif', alwaysOn: false };
 let libItems = []; // ultimo /api/media (para achar nome ao adicionar)
+
+const FONTES_ADMIN = {
+  serif: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+  sans: '"Jost", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  impact: '"Arial Black", "Helvetica Neue", Impact, system-ui, sans-serif',
+  mono: 'ui-monospace, "Courier New", Consolas, monospace',
+};
+
+function hexRgba(hex, a) {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || ''));
+  if (!m) return hex || 'transparent';
+  return (
+    'rgba(' + parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) +
+    ',' + (a == null ? 0.82 : a) + ')'
+  );
+}
 
 // ---- utilidades -------------------------------------------------
 
@@ -140,9 +165,11 @@ async function carregarEstado() {
       playlist = s.playlist.map((p) => ({ id: p.id, title: p.title || '' }));
     }
     if (s.playSettings) playSettings = { ...playSettings, ...s.playSettings };
+    if (s.nameStyle) nameStyle = { ...nameStyle, ...s.nameStyle };
     plName.value = playSettings.nameSec;
     plPhoto.value = playSettings.photoSec;
     plVideoMax.value = playSettings.videoMaxSec;
+    renderNameStyle();
     renderPlaylist();
     pintarEstado(s);
   } catch {
@@ -357,12 +384,59 @@ function lerDuracoes() {
   };
 }
 
+// ---- estilo do nome --------------------------------------
+
+function renderNameStyle() {
+  nsColor.value = nameStyle.color || '#f2e6dc';
+  nsBg.value = nameStyle.bg || '#071633';
+  nsFont.value = nameStyle.font || 'serif';
+  nsBgOp.value = Math.round((nameStyle.bgOpacity != null ? nameStyle.bgOpacity : 0.82) * 100);
+  nsAlways.checked = !!nameStyle.alwaysOn;
+  atualizarPreview();
+}
+
+function atualizarPreview() {
+  nsBgOpVal.textContent = nsBgOp.value + '%';
+  namePreview.style.color = nsColor.value;
+  namePreview.style.background = hexRgba(nsBg.value, Number(nsBgOp.value) / 100);
+  namePreview.style.fontFamily = FONTES_ADMIN[nsFont.value] || FONTES_ADMIN.serif;
+}
+
+function lerNameStyle() {
+  nameStyle = {
+    color: nsColor.value,
+    bg: nsBg.value,
+    bgOpacity: Number(nsBgOp.value) / 100,
+    font: nsFont.value,
+    alwaysOn: nsAlways.checked,
+  };
+}
+
+// arrastar cor/opacidade: preview ao vivo + salva com debounce
+[nsColor, nsBg, nsBgOp].forEach((el) => {
+  el.addEventListener('input', () => {
+    lerNameStyle();
+    atualizarPreview();
+    salvarPlaylist(false);
+  });
+});
+// select e checkbox: salva na hora
+[nsFont, nsAlways].forEach((el) => {
+  el.addEventListener('change', () => {
+    lerNameStyle();
+    atualizarPreview();
+    salvarPlaylist(true);
+  });
+});
+
 async function salvarPlaylist(imediato) {
   lerDuracoes();
+  lerNameStyle();
   const enviar = () =>
     enviarEstado({
       playlist: playlist.map((p) => ({ id: p.id, title: p.title })),
       playSettings,
+      nameStyle,
     });
   clearTimeout(salvarPlaylist._t);
   if (imediato) {
@@ -378,11 +452,13 @@ async function salvarPlaylist(imediato) {
 
 playPlaylistBtn.addEventListener('click', async () => {
   lerDuracoes();
+  lerNameStyle();
   pulsoBotao(playPlaylistBtn, 'enviando');
   const s = await enviarEstado({
     mode: 'playlist',
     playlist: playlist.map((p) => ({ id: p.id, title: p.title })),
     playSettings,
+    nameStyle,
   });
   pulsoBotao(playPlaylistBtn, s ? 'ok' : 'erro', s ? 'Tocando ✓' : 'Erro');
   if (s) flashOk('Playlist no ar (' + playlist.length + ' itens).');

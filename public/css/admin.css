@@ -452,6 +452,109 @@ button.is-fail,
   outline-offset: 1px;
 }
 
+/* --- Estilo do nome na tela --- */
+.name-style {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--line);
+}
+.ns-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.name-preview {
+  display: grid;
+  place-items: center;
+  min-height: 5rem;
+  padding: 1rem;
+  margin-bottom: 0.7rem;
+  border-radius: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    #0a0f18,
+    #0a0f18 10px,
+    #0d1420 10px,
+    #0d1420 20px
+  );
+}
+/* a "etiqueta" do nome; cor/fundo/fonte sao aplicados via JS */
+#namePreview {
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  padding: 0.35em 0.8em;
+  border-radius: 4px;
+  border-left: 3px solid var(--accent);
+  max-width: 100%;
+  word-break: break-word;
+}
+.ns-grid {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.6rem;
+  align-items: end;
+}
+.ns-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin: 0;
+}
+.ns-grid input[type='color'] {
+  width: 100%;
+  min-width: 3rem;
+  height: 2.2rem;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ns-grid select {
+  width: 100%;
+  padding: 0.5rem 0.5rem;
+  font: inherit;
+  color: var(--fg);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+.ns-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--fg);
+}
+.ns-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.ns-row #nsBgOpVal {
+  min-width: 2.8em;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ns-check {
+  cursor: pointer;
+}
+.ns-check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+}
+
 a {
   color: var(--accent);
 }

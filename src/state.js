@@ -13,6 +13,8 @@ const LIMITE_MENSAGEM = 500;
 const LIMITE_TITULO = 120;
 const LIMITE_PLAYLIST = 50;
 
+const FONTES = new Set(['serif', 'sans', 'impact', 'mono']);
+
 const PADRAO = {
   mode: 'aviso', // 'aviso' (texto) | 'media' (um item) | 'playlist' (rodizio)
   message: 'Bem-vindo!',
@@ -20,10 +22,23 @@ const PADRAO = {
   mediaId: null, // id da midia, quando mode === 'media'
   playlist: [], // [{ id, title }] quando mode === 'playlist'
   playSettings: { nameSec: 5, photoSec: 10, videoMaxSec: 90 },
+  // Aparencia do nome que aparece por cima da midia na playlist.
+  nameStyle: {
+    color: '#f2e6dc',
+    bg: '#071633',
+    bgOpacity: 0.82,
+    font: 'serif',
+    alwaysOn: false, // true = fica fixo; false = some depois de nameSec
+  },
   updatedAt: new Date().toISOString(),
 };
 
-let estado = { ...PADRAO, playlist: [], playSettings: { ...PADRAO.playSettings } };
+let estado = {
+  ...PADRAO,
+  playlist: [],
+  playSettings: { ...PADRAO.playSettings },
+  nameStyle: { ...PADRAO.nameStyle },
+};
 
 function normalizarLayout(v) {
   return v === 'vertical' ? 'vertical' : 'horizontal';
@@ -54,6 +69,21 @@ function limparSettings(s, base) {
     videoMaxSec: clamp(s.videoMaxSec, 5, 600, b.videoMaxSec),
   };
 }
+function ehHex(v) {
+  return typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
+}
+function limparNameStyle(s, base) {
+  const b = base || PADRAO.nameStyle;
+  if (!s || typeof s !== 'object') return { ...b };
+  const op = Number(s.bgOpacity);
+  return {
+    color: ehHex(s.color) ? s.color.toLowerCase() : b.color,
+    bg: ehHex(s.bg) ? s.bg.toLowerCase() : b.bg,
+    bgOpacity: Number.isFinite(op) ? Math.min(1, Math.max(0, op)) : b.bgOpacity,
+    font: FONTES.has(s.font) ? s.font : b.font,
+    alwaysOn: typeof s.alwaysOn === 'boolean' ? s.alwaysOn : b.alwaysOn,
+  };
+}
 
 export async function carregarEstado() {
   try {
@@ -65,6 +95,7 @@ export async function carregarEstado() {
       mediaId: typeof salvo.mediaId === 'string' ? salvo.mediaId : null,
       playlist: limparPlaylist(salvo.playlist),
       playSettings: limparSettings(salvo.playSettings),
+      nameStyle: limparNameStyle(salvo.nameStyle),
       updatedAt: salvo.updatedAt ?? new Date().toISOString(),
     };
   } catch {
@@ -75,7 +106,12 @@ export async function carregarEstado() {
 
 // Estado "cru" (uso interno).
 export function getEstado() {
-  return { ...estado, playlist: estado.playlist.map((p) => ({ ...p })) };
+  return {
+    ...estado,
+    playlist: estado.playlist.map((p) => ({ ...p })),
+    playSettings: { ...estado.playSettings },
+    nameStyle: { ...estado.nameStyle },
+  };
 }
 
 // Estado que vai para a TV: resolve midias e cai para 'aviso' se nao sobrar nada.
@@ -100,6 +136,7 @@ export function getEstadoPublico() {
     media,
     playlist,
     playSettings: { ...estado.playSettings },
+    nameStyle: { ...estado.nameStyle },
     updatedAt: estado.updatedAt,
   };
 }
@@ -116,6 +153,9 @@ export async function atualizarEstado(patch = {}) {
   }
   if (patch.playSettings) {
     estado.playSettings = limparSettings(patch.playSettings, estado.playSettings);
+  }
+  if (patch.nameStyle) {
+    estado.nameStyle = limparNameStyle(patch.nameStyle, estado.nameStyle);
   }
   if (patch.mode === 'aviso' || patch.mode === 'media' || patch.mode === 'playlist') {
     estado.mode = patch.mode;

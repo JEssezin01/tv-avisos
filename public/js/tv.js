@@ -35,6 +35,31 @@ function clamp(n, lo, hi, def) {
   return Math.max(lo, Math.min(hi, n));
 }
 
+// Aparencia do nome (editavel no painel) --------------------
+const FONTES_TV = {
+  serif: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+  sans: '"Jost", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  impact: '"Arial Black", "Helvetica Neue", Impact, system-ui, sans-serif',
+  mono: 'ui-monospace, "Courier New", Consolas, monospace',
+};
+
+function hexRgba(hex, a) {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || ''));
+  if (!m) return hex || 'transparent';
+  return (
+    'rgba(' +
+    parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) +
+    ',' + (a == null ? 0.82 : a) + ')'
+  );
+}
+
+function aplicarNameStyle(ns) {
+  if (!ns) return;
+  if (ns.color) elNameTag.style.color = ns.color;
+  elNameTag.style.background = hexRgba(ns.bg, ns.bgOpacity);
+  elNameTag.style.fontFamily = FONTES_TV[ns.font] || FONTES_TV.serif;
+}
+
 function pausarVideo() {
   try {
     if (!elVideo.paused) elVideo.pause();
@@ -106,10 +131,11 @@ function pararPlaylist() {
   playlistSig = null;
 }
 
-function rodarPlaylist(items, settings) {
+function rodarPlaylist(items, settings, style) {
   const nameSec = clamp(settings.nameSec, 1, 30, 5);
   const photoSec = clamp(settings.photoSec, 2, 120, 10);
   const videoMaxSec = clamp(settings.videoMaxSec, 5, 600, 90);
+  const nomeFixo = !!(style && style.alwaysOn);
 
   let i = 0;
   let cancelado = false;
@@ -134,6 +160,7 @@ function rodarPlaylist(items, settings) {
     elNameTag.textContent = txt;
     elNameTag.classList.remove('fading');
     elNameTag.hidden = false;
+    if (nomeFixo) return; // "nome sempre visivel" -> nao some
     timerNome = setTimeout(function () {
       if (!cancelado) elNameTag.classList.add('fading');
     }, nameSec * 1000);
@@ -196,17 +223,21 @@ function aplicarEstado(estado) {
 
   if (estado.mode === 'playlist' && estado.playlist && estado.playlist.length) {
     const settings = estado.playSettings || {};
+    const ns = estado.nameStyle || {};
+    // cor / fundo / fonte do nome sao aplicados AO VIVO (nao reiniciam o rodizio)
+    aplicarNameStyle(ns);
     const sig = JSON.stringify([
       estado.playlist.map(function (x) {
         return x.id + '|' + (x.title || '') + '|' + x.url;
       }),
       settings,
+      !!ns.alwaysOn, // "sempre visivel" muda o comportamento -> entra na assinatura
     ]);
     // mesma playlist ja rodando -> nao reinicia (poll/reconexao nao "pula")
     if (sig === playlistSig && playlistCtl) return;
     pararPlaylist();
     playlistSig = sig;
-    rodarPlaylist(estado.playlist, settings); // define playlistCtl internamente
+    rodarPlaylist(estado.playlist, settings, ns); // define playlistCtl internamente
   } else if (estado.mode === 'media' && estado.media) {
     pararPlaylist();
     mostrarMidia(estado.media);

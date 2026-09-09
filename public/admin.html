@@ -104,6 +104,33 @@
             <label>V&iacute;deo m&aacute;x (s)<input type="number" id="plVideoMax" min="5" max="600" step="1" /></label>
           </div>
 
+          <!-- ESTILO DO NOME -->
+          <div class="name-style">
+            <span class="ns-label">Estilo do nome na tela</span>
+            <div class="name-preview"><span id="namePreview">Corte de cabelo</span></div>
+            <div class="ns-grid">
+              <label>Letra<input type="color" id="nsColor" /></label>
+              <label>Fundo<input type="color" id="nsBg" /></label>
+              <label>Fonte
+                <select id="nsFont">
+                  <option value="serif">Elegante</option>
+                  <option value="sans">Moderna</option>
+                  <option value="impact">Grossa</option>
+                  <option value="mono">M&aacute;quina</option>
+                </select>
+              </label>
+            </div>
+            <label class="ns-row">
+              Opacidade do fundo
+              <input type="range" id="nsBgOp" min="0" max="100" step="5" />
+              <span id="nsBgOpVal"></span>
+            </label>
+            <label class="ns-row ns-check">
+              <input type="checkbox" id="nsAlways" />
+              Nome sempre vis&iacute;vel (n&atilde;o some)
+            </label>
+          </div>
+
           <button type="button" id="playPlaylistBtn" disabled>Tocar playlist na TV</button>
         </div>
 
