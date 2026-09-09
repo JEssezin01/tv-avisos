@@ -202,6 +202,47 @@
           </div>
         </details>
 
+        <!-- ---- Horario de funcionamento ---- -->
+        <details class="panel panel--acc">
+          <summary class="panel__title">
+            Hor&aacute;rio de funcionamento
+            <span class="panel__meta" id="schMeta"></span>
+          </summary>
+          <div class="panel__body">
+            <label class="check">
+              <input type="checkbox" id="schEnabled" />
+              Ligar hor&aacute;rio autom&aacute;tico
+            </label>
+            <p class="hint">
+              Dentro do hor&aacute;rio a TV mostra o conte&uacute;do normal.
+              Fora dele, mostra a mensagem de fechado &mdash; sozinha.
+            </p>
+
+            <div class="sch-fields" id="schFields">
+              <div class="grid-2">
+                <label class="mini">Abre<input type="time" id="schOpen" /></label>
+                <label class="mini">Fecha<input type="time" id="schClose" /></label>
+              </div>
+
+              <span class="field__label">Dias que abre</span>
+              <div class="days" id="schDays" role="group" aria-label="Dias que abre">
+                <label><input type="checkbox" value="0" /><span>Dom</span></label>
+                <label><input type="checkbox" value="1" /><span>Seg</span></label>
+                <label><input type="checkbox" value="2" /><span>Ter</span></label>
+                <label><input type="checkbox" value="3" /><span>Qua</span></label>
+                <label><input type="checkbox" value="4" /><span>Qui</span></label>
+                <label><input type="checkbox" value="5" /><span>Sex</span></label>
+                <label><input type="checkbox" value="6" /><span>S&aacute;b</span></label>
+              </div>
+
+              <label class="field__label" for="schMsg">Mensagem quando estiver fechado</label>
+              <textarea id="schMsg" rows="2" maxlength="500" placeholder="Fechado"></textarea>
+
+              <p class="hint" id="schNow">&nbsp;</p>
+            </div>
+          </div>
+        </details>
+
         <p class="msg msg--ok" id="okMsg" role="status"></p>
         <a class="tv-link" href="/tv" target="_blank" rel="noopener">Abrir a tela da TV &#8599;</a>
       </section>

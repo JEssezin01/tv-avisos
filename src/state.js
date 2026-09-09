@@ -45,6 +45,14 @@ const PADRAO = {
     pos: 'bottom-left', // onde o nome fica na tela
     alwaysOn: false, // true = fica fixo; false = some depois de nameSec
   },
+  // Horario de funcionamento: fora dele a TV mostra a mensagem de "fechado".
+  schedule: {
+    enabled: false,
+    open: '08:00', // HH:MM
+    close: '19:00',
+    days: [1, 2, 3, 4, 5, 6], // 0=domingo .. 6=sabado
+    closedMessage: 'Fechado',
+  },
   updatedAt: new Date().toISOString(),
 };
 
@@ -54,6 +62,7 @@ let estado = {
   playSettings: { ...PADRAO.playSettings },
   nameStyle: { ...PADRAO.nameStyle },
   playlistCmd: { ...PADRAO.playlistCmd },
+  schedule: { ...PADRAO.schedule, days: [...PADRAO.schedule.days] },
 };
 
 const CMD_ACOES = new Set(['none', 'next', 'prev', 'restart', 'goto']);
@@ -90,6 +99,33 @@ function limparSettings(s, base) {
 function ehHex(v) {
   return typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
 }
+function ehHora(v) {
+  return typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+}
+function limparDias(arr, base) {
+  const b = Array.isArray(base) ? base : PADRAO.schedule.days;
+  if (!Array.isArray(arr)) return [...b];
+  const set = new Set();
+  for (const d of arr) {
+    const n = Number(d);
+    if (Number.isInteger(n) && n >= 0 && n <= 6) set.add(n);
+  }
+  return [...set].sort((x, y) => x - y);
+}
+function limparSchedule(s, base) {
+  const b = base || PADRAO.schedule;
+  if (!s || typeof s !== 'object') {
+    return { ...b, days: [...b.days] };
+  }
+  const msg = typeof s.closedMessage === 'string' ? s.closedMessage.slice(0, LIMITE_MENSAGEM) : b.closedMessage;
+  return {
+    enabled: typeof s.enabled === 'boolean' ? s.enabled : b.enabled,
+    open: ehHora(s.open) ? s.open : b.open,
+    close: ehHora(s.close) ? s.close : b.close,
+    days: limparDias(s.days, b.days),
+    closedMessage: msg.trim() ? msg : b.closedMessage,
+  };
+}
 function limparNameStyle(s, base) {
   const b = base || PADRAO.nameStyle;
   if (!s || typeof s !== 'object') return { ...b };
@@ -123,6 +159,7 @@ export async function carregarEstado() {
         action: 'none',
         index: 0,
       },
+      schedule: limparSchedule(salvo.schedule),
       updatedAt: salvo.updatedAt ?? new Date().toISOString(),
     };
   } catch {
@@ -139,6 +176,7 @@ export function getEstado() {
     playSettings: { ...estado.playSettings },
     nameStyle: { ...estado.nameStyle },
     playlistCmd: { ...estado.playlistCmd },
+    schedule: { ...estado.schedule, days: [...estado.schedule.days] },
   };
 }
 
@@ -166,6 +204,7 @@ export function getEstadoPublico() {
     playSettings: { ...estado.playSettings },
     nameStyle: { ...estado.nameStyle },
     playlistCmd: { ...estado.playlistCmd },
+    schedule: { ...estado.schedule, days: [...estado.schedule.days] },
     updatedAt: estado.updatedAt,
   };
 }
@@ -185,6 +224,9 @@ export async function atualizarEstado(patch = {}) {
   }
   if (patch.nameStyle) {
     estado.nameStyle = limparNameStyle(patch.nameStyle, estado.nameStyle);
+  }
+  if (patch.schedule && typeof patch.schedule === 'object') {
+    estado.schedule = limparSchedule(patch.schedule, estado.schedule);
   }
   if (patch.playlistCmd && typeof patch.playlistCmd === 'object') {
     const acao = CMD_ACOES.has(patch.playlistCmd.action) ? patch.playlistCmd.action : 'none';

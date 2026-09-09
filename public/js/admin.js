@@ -54,6 +54,15 @@ const onairDot = document.getElementById('onairDot');
 const libMeta = document.getElementById('libMeta');
 const plMeta = document.getElementById('plMeta');
 
+const schEnabled = document.getElementById('schEnabled');
+const schFields = document.getElementById('schFields');
+const schOpen = document.getElementById('schOpen');
+const schClose = document.getElementById('schClose');
+const schDays = document.getElementById('schDays');
+const schMsg = document.getElementById('schMsg');
+const schNow = document.getElementById('schNow');
+const schMeta = document.getElementById('schMeta');
+
 const okMsg = document.getElementById('okMsg');
 
 // Copia de trabalho (sincronizada com o servidor).
@@ -70,6 +79,13 @@ let nameStyle = {
   alwaysOn: false,
 };
 let libItems = []; // ultimo /api/media (para achar nome ao adicionar)
+let schedule = {
+  enabled: false,
+  open: '08:00',
+  close: '19:00',
+  days: [1, 2, 3, 4, 5, 6],
+  closedMessage: 'Fechado',
+};
 
 // Posicao -> alinhamento dentro da previa (flex).
 const PREVIEW_ALIGN = {
@@ -203,11 +219,19 @@ async function carregarEstado() {
     }
     if (s.playSettings) playSettings = { ...playSettings, ...s.playSettings };
     if (s.nameStyle) nameStyle = { ...nameStyle, ...s.nameStyle };
+    if (s.schedule) {
+      schedule = {
+        ...schedule,
+        ...s.schedule,
+        days: Array.isArray(s.schedule.days) ? s.schedule.days.map(Number) : schedule.days,
+      };
+    }
     plName.value = playSettings.nameSec;
     plPhoto.value = playSettings.photoSec;
     plVideoMax.value = playSettings.videoMaxSec;
     renderNameStyle();
     renderPlaylist();
+    renderSchedule();
     pintarEstado(s);
   } catch {
     /* painel abre mesmo sem estado carregado */
@@ -219,13 +243,18 @@ function pintarEstado(s) {
     b.classList.toggle('active', b.dataset.layout === s.layout);
   });
 
+  const sc = s.schedule || schedule;
+  const fechadoAgora = !!(sc && sc.enabled && !estaAbertoAdmin(sc));
+
   const emPlaylist = s.mode === 'playlist' && s.playlist && s.playlist.length;
-  plControl.hidden = !emPlaylist;
-  if (emPlaylist && s.playlistPos) {
+  plControl.hidden = !emPlaylist || fechadoAgora;
+  if (emPlaylist && !fechadoAgora && s.playlistPos) {
     atualizarPosicao(s.playlistPos.i || 0, s.playlistPos.total || playlist.length);
   }
 
-  if (emPlaylist) {
+  if (fechadoAgora) {
+    nowWhat.textContent = 'Fechado (fora do horário)';
+  } else if (emPlaylist) {
     nowWhat.textContent = 'Playlist — ' + s.playlist.length + ' itens em rodízio';
   } else if (s.mode === 'media' && s.media) {
     const rotulo = s.media.type === 'video' ? 'Vídeo' : 'Imagem';
@@ -233,7 +262,7 @@ function pintarEstado(s) {
   } else {
     nowWhat.textContent = 'Aviso de texto';
   }
-  if (onairDot) onairDot.classList.toggle('is-live', s.mode !== 'aviso');
+  if (onairDot) onairDot.classList.toggle('is-live', s.mode !== 'aviso' && !fechadoAgora);
 
   destacarMidiaNoAr(s.mode === 'media' && s.media ? s.media.id : null);
 }
@@ -540,6 +569,97 @@ playPlaylistBtn.addEventListener('click', async () => {
   setTimeout(pollPosicao, 500);
 });
 
+// ---- horario de funcionamento ---------------------------
+
+// Espelho do estaAberto() do tv.js (mesma regra, inclusive faixa que vira a noite).
+function estaAbertoAdmin(sc) {
+  if (!sc || !sc.enabled) return true;
+  const hm = (v) => {
+    const m = /^(\d{2}):(\d{2})$/.exec(String(v || ''));
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+  };
+  const o = hm(sc.open);
+  const c = hm(sc.close);
+  if (o == null || c == null || o === c) return true;
+  const dias = Array.isArray(sc.days) ? sc.days.map(Number) : [];
+  const agora = new Date();
+  const min = agora.getHours() * 60 + agora.getMinutes();
+  const hoje = agora.getDay();
+  if (o < c) return dias.indexOf(hoje) !== -1 && min >= o && min < c;
+  if (min >= o) return dias.indexOf(hoje) !== -1;
+  if (min < c) return dias.indexOf((hoje + 6) % 7) !== -1;
+  return false;
+}
+
+// Le o formulario (fonte da verdade depois que a tela ja carregou).
+function formSchedule() {
+  const dias = [];
+  schDays.querySelectorAll('input[type="checkbox"]').forEach((c) => {
+    if (c.checked) dias.push(Number(c.value));
+  });
+  return {
+    enabled: schEnabled.checked,
+    open: schOpen.value || '08:00',
+    close: schClose.value || '19:00',
+    days: dias,
+    closedMessage: (schMsg.value || '').trim() || 'Fechado',
+  };
+}
+
+function renderSchedule() {
+  schEnabled.checked = !!schedule.enabled;
+  schFields.hidden = !schedule.enabled;
+  schOpen.value = schedule.open || '08:00';
+  schClose.value = schedule.close || '19:00';
+  const set = new Set(Array.isArray(schedule.days) ? schedule.days.map(Number) : []);
+  schDays.querySelectorAll('input[type="checkbox"]').forEach((c) => {
+    c.checked = set.has(Number(c.value));
+  });
+  schMsg.value = schedule.closedMessage || '';
+  atualizarSchNow();
+}
+
+// So mexe no aviso "agora esta aberto/fechado" — nao briga com a edicao.
+function atualizarSchNow() {
+  if (panelView.hidden) return;
+  const sc = formSchedule();
+  if (!sc.enabled) {
+    schNow.textContent = 'Desligado — a TV mostra o conteúdo normal o tempo todo.';
+    if (schMeta) schMeta.textContent = '';
+    return;
+  }
+  const aberto = estaAbertoAdmin(sc);
+  schNow.textContent = aberto
+    ? 'Agora: dentro do horário — a TV mostra o conteúdo normal.'
+    : 'Agora: fora do horário — a TV mostra "' + sc.closedMessage + '".';
+  if (schMeta) schMeta.textContent = aberto ? 'aberto agora' : 'fechado agora';
+}
+
+async function salvarSchedule(imediato) {
+  schedule = formSchedule();
+  const enviar = () => enviarEstado({ schedule });
+  clearTimeout(salvarSchedule._t);
+  if (imediato) await enviar();
+  else salvarSchedule._t = setTimeout(enviar, 500);
+}
+
+schEnabled.addEventListener('change', () => {
+  schFields.hidden = !schEnabled.checked;
+  atualizarSchNow();
+  salvarSchedule(true);
+});
+[schOpen, schClose, schMsg].forEach((el) => {
+  el.addEventListener('input', () => {
+    atualizarSchNow();
+    salvarSchedule(false);
+  });
+});
+schDays.addEventListener('change', () => {
+  atualizarSchNow();
+  salvarSchedule(true);
+});
+setInterval(atualizarSchNow, 20000); // reavalia "aberto/fechado" com o relogio andando
+
 // ---- controle do rodizio (◀ ▶ ⟲ + barrinha) --------------
 
 function atualizarPosicao(i, total) {
@@ -572,11 +692,7 @@ async function pollPosicao() {
   } catch {
     return;
   }
-  const emPlaylist = s.mode === 'playlist' && s.playlist && s.playlist.length;
-  plControl.hidden = !emPlaylist;
-  if (emPlaylist && s.playlistPos) {
-    atualizarPosicao(s.playlistPos.i || 0, s.playlistPos.total || playlist.length);
-  }
+  pintarEstado(s); // cuida do rodizio E do status "fechado (fora do horario)"
 }
 setInterval(pollPosicao, 2500);
 

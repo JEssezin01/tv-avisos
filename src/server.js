@@ -102,6 +102,9 @@ app.post('/api/state', requireAuth, async (req, res) => {
   if (body.playlistCmd && typeof body.playlistCmd === 'object') {
     patch.playlistCmd = body.playlistCmd; // state.js valida e incrementa o seq
   }
+  if (body.schedule && typeof body.schedule === 'object') {
+    patch.schedule = body.schedule; // state.js valida horas/dias
+  }
 
   if (body.mode === 'aviso') {
     patch.mode = 'aviso';

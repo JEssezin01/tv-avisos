@@ -20,6 +20,7 @@ let urlAtual = null;
 let conectado = false;
 let ultimoEstadoOk = Date.now();
 let pollTimer = null;
+let estadoAtual = null; // ultimo estado recebido (re-checado ao cruzar o horario)
 
 // --- helpers ------------------------------------------------
 
@@ -33,6 +34,36 @@ function clamp(n, lo, hi, def) {
   n = Number(n);
   if (!isFinite(n)) return def;
   return Math.max(lo, Math.min(hi, n));
+}
+
+// --- horario de funcionamento -----------------------------
+// "aberto" = dia da semana marcado E dentro da faixa de horas.
+// Suporta faixa que vira a noite (ex.: 20:00 -> 03:00): a madrugada
+// pertence ao dia em que a faixa ABRIU.
+
+function horaParaMin(hhmm) {
+  const m = /^(\d{2}):(\d{2})$/.exec(String(hhmm || ''));
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function estaAberto(sc) {
+  if (!sc || !sc.enabled) return true;
+  const o = horaParaMin(sc.open);
+  const c = horaParaMin(sc.close);
+  if (o == null || c == null || o === c) return true; // sem faixa valida -> nao bloqueia
+  const dias = Array.isArray(sc.days) ? sc.days : [];
+  const agora = new Date();
+  const min = agora.getHours() * 60 + agora.getMinutes();
+  const hoje = agora.getDay();
+
+  if (o < c) {
+    return dias.indexOf(hoje) !== -1 && min >= o && min < c;
+  }
+  // vira a noite
+  if (min >= o) return dias.indexOf(hoje) !== -1;
+  if (min < c) return dias.indexOf((hoje + 6) % 7) !== -1; // madrugada -> dia anterior
+  return false;
 }
 
 // Aparencia do nome (editavel no painel) --------------------
@@ -268,8 +299,15 @@ function rodarPlaylist(items, settings, style, cmd) {
 
 function aplicarEstado(estado) {
   if (!estado || typeof estado !== 'object') return;
+  estadoAtual = estado;
   ultimoEstadoOk = Date.now();
   aplicarLayout(estado.layout);
+
+  // Fora do horario de funcionamento -> tela de "fechado" (automatico).
+  if (estado.schedule && estado.schedule.enabled && !estaAberto(estado.schedule)) {
+    mostrarAviso(estado.schedule.closedMessage || 'Fechado');
+    return;
+  }
 
   if (estado.mode === 'playlist' && estado.playlist && estado.playlist.length) {
     const settings = estado.playSettings || {};
@@ -415,6 +453,14 @@ setInterval(function () {
     location.reload();
   }
 }, 60000);
+
+// --- horario: re-checa sozinho ao cruzar abertura/fechamento --
+// Sem depender do servidor: a cada 30s reaplica o ultimo estado,
+// entao a TV entra/sai da tela de "fechado" na hora certa.
+
+setInterval(function () {
+  if (estadoAtual) aplicarEstado(estadoAtual);
+}, 30000);
 
 // --- tela cheia + esconder cursor -------------------------
 

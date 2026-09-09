@@ -275,6 +275,7 @@ textarea,
 input[type="text"],
 input[type="password"],
 input[type="number"],
+input[type="time"],
 select {
   width: 100%;
   padding: 0.6rem 0.75rem;
@@ -763,6 +764,34 @@ input[type="checkbox"] {
   gap: var(--sp-3);
   padding-left: var(--sp-3);
   border-left: 2px solid var(--line);
+}
+
+/* ---------- horario de funcionamento ---------- */
+.sch-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.days label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  font-size: var(--fs-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-1);
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
+}
+.days label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 /* ---------- previa do nome ---------- */
