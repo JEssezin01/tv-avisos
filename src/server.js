@@ -14,7 +14,7 @@ import { Server as SocketServer } from 'socket.io';
 import { config } from './config.js';
 import { sessionMiddleware, authRouter, requireAuth } from './auth.js';
 import { carregarEstado, getEstado, getEstadoPublico, atualizarEstado } from './state.js';
-import { setupRealtime, broadcastEstado, getPlPos } from './realtime.js';
+import { setupRealtime, broadcastEstado, getPlPos, getTvInfo } from './realtime.js';
 import {
   carregarMidias,
   listarMidias,
@@ -79,7 +79,7 @@ app.use('/auth', authRouter);
 
 // Leitura: publica (a TV precisa poder ler sem login).
 app.get('/api/state', (req, res) => {
-  res.json({ ...getEstadoPublico(), playlistPos: getPlPos() });
+  res.json({ ...getEstadoPublico(), playlistPos: getPlPos(), tvInfo: getTvInfo() });
 });
 
 // Escrita: so com login (painel de controle).
@@ -128,7 +128,7 @@ app.post('/api/state', requireAuth, async (req, res) => {
 
   await atualizarEstado(patch);
   broadcastEstado(io); // avisa todas as TVs na hora
-  res.json({ ...getEstadoPublico(), playlistPos: getPlPos() });
+  res.json({ ...getEstadoPublico(), playlistPos: getPlPos(), tvInfo: getTvInfo() });
 });
 
 // --- API da biblioteca de midias --------------------------------

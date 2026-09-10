@@ -10,6 +10,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 const nowWhat = document.getElementById('nowWhat');
 const segLayout = document.getElementById('segLayout');
 const segRotate = document.getElementById('segRotate');
+const tvDiag = document.getElementById('tvDiag');
 const messageEl = document.getElementById('message');
 const showAvisoBtn = document.getElementById('showAvisoBtn');
 
@@ -272,6 +273,26 @@ function pintarEstado(s) {
   if (onairDot) onairDot.classList.toggle('is-live', s.mode !== 'aviso' && !fechadoAgora);
 
   destacarMidiaNoAr(s.mode === 'media' && s.media ? s.media.id : null);
+  renderTvDiag(s.tvInfo);
+}
+
+// Diagnostico que a TV reporta (aparece embaixo do "Girar o video").
+function renderTvDiag(t) {
+  if (!tvDiag) return;
+  if (!t || !t.vp) {
+    tvDiag.hidden = true;
+    return;
+  }
+  const seg = t.ageMs != null ? Math.round(t.ageMs / 1000) : '?';
+  const online = t.ageMs != null && t.ageMs < 15000;
+  tvDiag.hidden = false;
+  tvDiag.textContent =
+    (online ? '📺 ' : '📺 (há ' + seg + 's) ') +
+    'tela ' + t.vp +
+    ' · vídeo ' + t.vidNat +
+    ' · ' + t.layout + ' / girar ' + t.rot + '°' +
+    ' · na tela ' + t.vidTela +
+    ' · v' + t.ver;
 }
 
 async function enviarEstado(patch) {

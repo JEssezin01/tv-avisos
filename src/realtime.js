@@ -13,6 +13,15 @@ export function getPlPos() {
   return { ...plPos };
 }
 
+// Diagnostico que a TV reporta (tamanho da tela, do video, encaixe...).
+// So pra aparecer no painel e ajudar a acertar a rotacao. Nao persiste.
+let tvInfo = null;
+
+export function getTvInfo() {
+  if (!tvInfo) return null;
+  return { ...tvInfo, ageMs: Date.now() - (tvInfo.ts || 0) };
+}
+
 function comPos() {
   return { ...getEstadoPublico(), playlistPos: plPos };
 }
@@ -30,6 +39,24 @@ export function setupRealtime(io) {
       plPos = {
         i: Math.max(0, Math.min(999, Math.round(i))),
         total: Math.max(0, Math.min(999, Math.round(total))),
+        ts: Date.now(),
+      };
+    });
+
+    socket.on('tvinfo', (d) => {
+      if (!d || typeof d !== 'object') return;
+      const txt = (v) => (typeof v === 'string' ? v.slice(0, 40) : '');
+      tvInfo = {
+        ver: txt(d.ver),
+        vp: txt(d.vp),
+        dpr: Number(d.dpr) || 1,
+        layout: txt(d.layout),
+        rot: Math.max(0, Math.min(359, Math.round(Number(d.rot) || 0))),
+        stage: txt(d.stage),
+        vidNat: txt(d.vidNat),
+        vidCss: txt(d.vidCss),
+        vidTela: txt(d.vidTela),
+        modo: txt(d.modo),
         ts: Date.now(),
       };
     });

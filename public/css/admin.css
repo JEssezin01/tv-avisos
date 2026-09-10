@@ -406,6 +406,14 @@ input[type="checkbox"] {
 .seg--4 {
   grid-template-columns: repeat(4, 1fr);
 }
+
+.tv-diag {
+  margin-top: var(--sp-2);
+  font-family: ui-monospace, "Courier New", Consolas, monospace;
+  font-size: var(--fs-xs);
+  color: var(--faint);
+  overflow-wrap: anywhere;
+}
 .seg button {
   padding: 0.55rem 0.4rem;
   font: inherit;

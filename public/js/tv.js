@@ -8,7 +8,7 @@
 //  - Watchdog: 10 min sem nenhum estado e sem socket -> recarrega a pagina.
 //  - Nada disso deixa a tela preta: o conteudo atual continua exibido.
 
-const APP_VER = '20260910e';
+const APP_VER = '20260910f';
 
 const elStage = document.getElementById('stage');
 const elAviso = document.getElementById('aviso');
@@ -98,6 +98,7 @@ function ajustarMidia() {
   el.style.height = (girado ? w : h) + 'px';
   el.style.transform = 'translateZ(0)' + (rotExtra ? ' rotate(' + rotExtra + 'deg)' : '');
   atualizarDbg();
+  reportarTvInfo();
 }
 
 function limparTamanhoMidia() {
@@ -162,6 +163,28 @@ function atualizarDbg() {
     'IMG real ' + elImg.naturalWidth + ' x ' + elImg.naturalHeight + '   hidden=' + elImg.hidden,
     'modo ' + (estadoAtual && estadoAtual.mode),
   ].join('\n');
+}
+
+// Manda o diagnostico da TV para o servidor -> aparece no painel (celular).
+function reportarTvInfo() {
+  try {
+    if (!socket || !socket.connected) return;
+    const vb = elVideo.getBoundingClientRect();
+    socket.emit('tvinfo', {
+      ver: APP_VER,
+      vp: window.innerWidth + 'x' + window.innerHeight,
+      dpr: window.devicePixelRatio || 1,
+      layout: String(layoutAtual),
+      rot: rotExtra,
+      stage: elStage.clientWidth + 'x' + elStage.clientHeight,
+      vidNat: elVideo.videoWidth + 'x' + elVideo.videoHeight,
+      vidCss: (elVideo.style.width || '-') + 'x' + (elVideo.style.height || '-'),
+      vidTela: Math.round(vb.width) + 'x' + Math.round(vb.height),
+      modo: String(estadoAtual && estadoAtual.mode),
+    });
+  } catch (e) {
+    /* ignora */
+  }
 }
 
 function clamp(n, lo, hi, def) {
@@ -547,6 +570,7 @@ if (typeof io === 'function') {
     desligarPoll();
     buscarEstado(); // pega o estado mais recente logo apos (re)conectar
     if (playlistCtl && playlistCtl.reportar) playlistCtl.reportar(); // avisa a posicao ao painel
+    setTimeout(reportarTvInfo, 800); // manda o diagnostico pro painel
   });
 
   const aoCair = function () {
@@ -640,6 +664,9 @@ setInterval(function () {
 setInterval(function () {
   if (estadoAtual) aplicarEstado(estadoAtual);
 }, 30000);
+
+// manda o diagnostico da TV pro painel de tempos em tempos
+setInterval(reportarTvInfo, 4000);
 
 // --- tela cheia + esconder cursor -------------------------
 
