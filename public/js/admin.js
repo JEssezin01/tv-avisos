@@ -9,6 +9,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 
 const nowWhat = document.getElementById('nowWhat');
 const segLayout = document.getElementById('segLayout');
+const segRotate = document.getElementById('segRotate');
 const messageEl = document.getElementById('message');
 const showAvisoBtn = document.getElementById('showAvisoBtn');
 
@@ -242,6 +243,12 @@ function pintarEstado(s) {
   segLayout.querySelectorAll('button').forEach((b) => {
     b.classList.toggle('active', b.dataset.layout === s.layout);
   });
+  if (segRotate) {
+    const rot = String(s.videoRotate == null ? 0 : s.videoRotate);
+    segRotate.querySelectorAll('button').forEach((b) => {
+      b.classList.toggle('active', b.dataset.rot === rot);
+    });
+  }
 
   const sc = s.schedule || schedule;
   const fechadoAgora = !!(sc && sc.enabled && !estaAbertoAdmin(sc));
@@ -299,6 +306,17 @@ segLayout.addEventListener('click', async (e) => {
   const s = await enviarEstado({ layout: btn.dataset.layout });
   pulsoBotao(btn, s ? 'ok' : 'erro'); // botao estreito: so muda a cor
 });
+
+if (segRotate) {
+  segRotate.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-rot]');
+    if (!btn) return;
+    pulsoBotao(btn, 'enviando');
+    const s = await enviarEstado({ videoRotate: Number(btn.dataset.rot) });
+    pulsoBotao(btn, s ? 'ok' : 'erro');
+    if (s) flashOk('Rotação do vídeo atualizada.');
+  });
+}
 
 showAvisoBtn.addEventListener('click', async () => {
   pulsoBotao(showAvisoBtn, 'enviando');

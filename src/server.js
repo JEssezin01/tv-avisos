@@ -89,6 +89,7 @@ app.post('/api/state', requireAuth, async (req, res) => {
 
   if (typeof body.message === 'string') patch.message = body.message;
   if (body.layout === 'horizontal' || body.layout === 'vertical') patch.layout = body.layout;
+  if (body.videoRotate !== undefined) patch.videoRotate = body.videoRotate; // state.js valida (0/90/180/270)
 
   // A playlist e as duracoes podem ser salvas mesmo sem trocar o modo
   // (voce edita a playlist enquanto a TV mostra outra coisa).

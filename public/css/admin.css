@@ -403,6 +403,9 @@ input[type="checkbox"] {
   border: 1px solid var(--line);
   border-radius: var(--r-2);
 }
+.seg--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
 .seg button {
   padding: 0.55rem 0.4rem;
   font: inherit;

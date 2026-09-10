@@ -8,7 +8,7 @@
 //  - Watchdog: 10 min sem nenhum estado e sem socket -> recarrega a pagina.
 //  - Nada disso deixa a tela preta: o conteudo atual continua exibido.
 
-const APP_VER = '20260910c';
+const APP_VER = '20260910d';
 
 const elStage = document.getElementById('stage');
 const elAviso = document.getElementById('aviso');
@@ -18,18 +18,24 @@ const elNameTag = document.getElementById('nameTag');
 const elStatus = document.getElementById('status');
 const elFsBtn = document.getElementById('fsBtn');
 
-// Rotacao extra do video (0/90/180/270). Vem de ?rot=90 na URL e fica
-// guardada (localStorage) pra sobreviver aos reloads. ?rot=0 limpa.
-// Serve para videos de celular cuja rotacao a TV nao aplica sozinha.
+// Rotacao extra do video (0/90/180/270). Normalmente vem do painel
+// (estado.videoRotate). ?rot=90 na URL forca e TRAVA (pra teste em campo),
+// e fica guardado no localStorage. ?rot=0 limpa.
 let rotExtra = 0;
+let rotTravadoPorUrl = false;
+const ROTS_OK = [0, 90, 180, 270];
 (function () {
   try {
     const q = new URLSearchParams(location.search);
-    let r = q.has('rot')
-      ? parseInt(q.get('rot'), 10)
-      : parseInt(localStorage.getItem('tvRot') || '0', 10);
-    rotExtra = r === 90 || r === 180 || r === 270 ? r : 0;
-    if (q.has('rot')) localStorage.setItem('tvRot', String(rotExtra));
+    if (q.has('rot')) {
+      const r = parseInt(q.get('rot'), 10);
+      rotExtra = ROTS_OK.indexOf(r) >= 0 ? r : 0;
+      localStorage.setItem('tvRot', String(rotExtra));
+      rotTravadoPorUrl = true;
+    } else {
+      const ls = parseInt(localStorage.getItem('tvRot') || '0', 10);
+      rotExtra = ROTS_OK.indexOf(ls) >= 0 ? ls : 0;
+    }
   } catch (e) {
     rotExtra = 0;
   }
@@ -81,7 +87,11 @@ function ajustarMidia() {
   // dimensoes "visuais" depois da rotacao extra
   const vw = girado ? nh : nw;
   const vh = girado ? nw : nh;
-  const escala = Math.min(cw / vw, ch / vh); // "contain": cabe inteiro
+  // VIDEO: preenche a tela (corta o que sobrar, nunca estica, nunca tarja).
+  // IMAGEM: aparece inteira (aviso/foto nao pode perder pedaco).
+  const escala = emVideo
+    ? Math.max(cw / vw, ch / vh) // cover
+    : Math.min(cw / vw, ch / vh); // contain
   const w = Math.round(vw * escala);
   const h = Math.round(vh * escala);
   // o elemento (antes de girar) tem que manter a proporcao NAO girada
@@ -142,12 +152,13 @@ function atualizarDbg() {
     'MURAL TV  ver ' + APP_VER,
     'url   ' + location.pathname + location.search,
     'tela  ' + window.innerWidth + ' x ' + window.innerHeight + '   dpr ' + (window.devicePixelRatio || 1),
-    'layout ' + layoutAtual + '   rotExtra ' + rotExtra,
+    'layout ' + layoutAtual + '   rotExtra ' + rotExtra + (rotTravadoPorUrl ? ' (travado url)' : ''),
+    'estado.videoRotate ' + (estadoAtual && estadoAtual.videoRotate),
     'palco ' + elStage.clientWidth + ' x ' + elStage.clientHeight + '   hasMedia=' + elStage.classList.contains('has-media'),
     'VIDEO real ' + elVideo.videoWidth + ' x ' + elVideo.videoHeight + '   readyState ' + elVideo.readyState + '   hidden=' + elVideo.hidden,
     'video css  ' + (elVideo.style.width || '-') + ' x ' + (elVideo.style.height || '-'),
     'video real na tela ' + Math.round(vb.width) + ' x ' + Math.round(vb.height),
-    'object-fit ' + fit,
+    'object-fit ' + fit + '   (video=preencher, img=inteiro)',
     'transform  ' + tf,
     'IMG real ' + elImg.naturalWidth + ' x ' + elImg.naturalHeight + '   hidden=' + elImg.hidden,
     'modo ' + (estadoAtual && estadoAtual.mode),
@@ -436,6 +447,20 @@ function aplicarEstado(estado) {
   estadoAtual = estado;
   ultimoEstadoOk = Date.now();
   aplicarLayout(estado.layout);
+
+  // Rotacao do video vem do painel (a nao ser que ?rot= tenha travado).
+  if (!rotTravadoPorUrl && ROTS_OK.indexOf(Number(estado.videoRotate)) >= 0) {
+    const novo = Number(estado.videoRotate);
+    if (novo !== rotExtra) {
+      rotExtra = novo;
+      try {
+        localStorage.setItem('tvRot', String(novo));
+      } catch (e) {
+        /* ignora */
+      }
+      ajustarMidia(); // re-encaixa ja (mesmo se a playlist nao reiniciar)
+    }
+  }
 
   // Fora do horario de funcionamento -> tela de "fechado" (automatico).
   if (estado.schedule && estado.schedule.enabled && !estaAberto(estado.schedule)) {

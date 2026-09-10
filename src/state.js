@@ -29,6 +29,7 @@ const PADRAO = {
   message: 'Bem-vindo!',
   layout: 'horizontal', // 'horizontal' (deitado) | 'vertical' (em pe)
   mediaId: null, // id da midia, quando mode === 'media'
+  videoRotate: 0, // graus a girar o video na tela: 0 | 90 | 180 | 270
   playlist: [], // [{ id, title }] quando mode === 'playlist'
   playSettings: { nameSec: 5, photoSec: 10, videoMaxSec: 90 },
   // Comando de transporte da playlist (o painel manda; a TV obedece).
@@ -66,6 +67,12 @@ let estado = {
 };
 
 const CMD_ACOES = new Set(['none', 'next', 'prev', 'restart', 'goto']);
+const ROT_VALIDOS = new Set([0, 90, 180, 270]);
+
+function normalizarRot(v) {
+  const n = Number(v);
+  return ROT_VALIDOS.has(n) ? n : 0;
+}
 
 function normalizarLayout(v) {
   return v === 'vertical' ? 'vertical' : 'horizontal';
@@ -151,6 +158,7 @@ export async function carregarEstado() {
       message: typeof salvo.message === 'string' ? salvo.message : PADRAO.message,
       layout: normalizarLayout(salvo.layout),
       mediaId: typeof salvo.mediaId === 'string' ? salvo.mediaId : null,
+      videoRotate: normalizarRot(salvo.videoRotate),
       playlist: limparPlaylist(salvo.playlist),
       playSettings: limparSettings(salvo.playSettings),
       nameStyle: limparNameStyle(salvo.nameStyle),
@@ -199,6 +207,7 @@ export function getEstadoPublico() {
     mode,
     message: estado.message,
     layout: estado.layout,
+    videoRotate: estado.videoRotate,
     media,
     playlist,
     playSettings: { ...estado.playSettings },
@@ -215,6 +224,9 @@ export async function atualizarEstado(patch = {}) {
   }
   if (patch.layout === 'horizontal' || patch.layout === 'vertical') {
     estado.layout = patch.layout;
+  }
+  if (patch.videoRotate !== undefined) {
+    estado.videoRotate = normalizarRot(patch.videoRotate);
   }
   if (Array.isArray(patch.playlist)) {
     estado.playlist = limparPlaylist(patch.playlist);

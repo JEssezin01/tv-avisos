@@ -48,6 +48,7 @@ body {
   place-items: center;
   padding: 6vmin;
   text-align: center;
+  overflow: hidden; /* video "preencher a tela": corta o que passa da borda */
   transform: translate3d(-50%, -50%, 0) rotate3d(0, 0, 1, 0deg);
   transform-origin: center center;
   will-change: transform;
@@ -79,17 +80,15 @@ body {
   word-break: break-word;
 }
 
-/* Video / imagem: aparece INTEIRO (nunca cortado, nunca esticado),
-   centralizado, em qualquer resolucao ou proporcao.
-   - O tv.js calcula o encaixe exato e define width/height em px
-     (varios navegadores de TV ignoram object-fit em <video>).
-   - Enquanto o JS nao roda / se falhar: max-width/height + tamanho
-     natural garantem que no minimo nao distorce.
+/* Video / imagem: o tv.js (ajustarMidia) calcula o tamanho e define
+   width/height em px + rotate() -> nunca estica, video preenche a tela,
+   imagem aparece inteira. Varios navegadores de TV ignoram object-fit em
+   <video>, por isso o calculo e feito na mao.
+   - object-fit: contain aqui e so uma rede de seguranca (navegador que
+     respeita, e o intervalo antes do JS rodar).
    - translateZ(0): poe o video na propria camada de GPU (decode por HW).
    - Nao definir "display" aqui -> o [hidden] precisa continuar valendo. */
 .media {
-  max-width: 100%;
-  max-height: 100%;
   object-fit: contain;
   object-position: center;
   background: #000;
