@@ -213,9 +213,21 @@ app.use(
 );
 
 // --- Arquivos estaticos (tv.html, admin.html, css, js) ------------
+// Sem cache "duro": a TV Samsung/Tizen guarda JS/CSS com muita folga e
+// nao pegava correcao nenhuma sem reabrir o navegador. Sao arquivos
+// pequenos -> "no-cache" (revalida sempre; 304 rapido quando nao mudou).
 
 app.get('/', (req, res) => res.redirect('/tv'));
-app.use(express.static(PASTA_PUBLICA, { extensions: ['html'] }));
+app.use(
+  express.static(PASTA_PUBLICA, {
+    extensions: ['html'],
+    etag: true,
+    lastModified: true,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'no-cache');
+    },
+  }),
+);
 
 // --- Tempo real -------------------------------------------------
 
