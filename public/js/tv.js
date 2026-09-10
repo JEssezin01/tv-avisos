@@ -8,6 +8,8 @@
 //  - Watchdog: 10 min sem nenhum estado e sem socket -> recarrega a pagina.
 //  - Nada disso deixa a tela preta: o conteudo atual continua exibido.
 
+const APP_VER = '20260910c';
+
 const elStage = document.getElementById('stage');
 const elAviso = document.getElementById('aviso');
 const elVideo = document.getElementById('mediaVideo');
@@ -15,6 +17,23 @@ const elImg = document.getElementById('mediaImage');
 const elNameTag = document.getElementById('nameTag');
 const elStatus = document.getElementById('status');
 const elFsBtn = document.getElementById('fsBtn');
+
+// Rotacao extra do video (0/90/180/270). Vem de ?rot=90 na URL e fica
+// guardada (localStorage) pra sobreviver aos reloads. ?rot=0 limpa.
+// Serve para videos de celular cuja rotacao a TV nao aplica sozinha.
+let rotExtra = 0;
+(function () {
+  try {
+    const q = new URLSearchParams(location.search);
+    let r = q.has('rot')
+      ? parseInt(q.get('rot'), 10)
+      : parseInt(localStorage.getItem('tvRot') || '0', 10);
+    rotExtra = r === 90 || r === 180 || r === 270 ? r : 0;
+    if (q.has('rot')) localStorage.setItem('tvRot', String(rotExtra));
+  } catch (e) {
+    rotExtra = 0;
+  }
+})();
 
 let urlAtual = null;
 let conectado = false;
@@ -45,23 +64,94 @@ function aplicarLayout(layout) {
 function ajustarMidia() {
   const emVideo = !elVideo.hidden;
   const el = emVideo ? elVideo : !elImg.hidden ? elImg : null;
-  if (!el) return;
+  if (!el) {
+    atualizarDbg();
+    return;
+  }
   const nw = emVideo ? elVideo.videoWidth : elImg.naturalWidth;
   const nh = emVideo ? elVideo.videoHeight : elImg.naturalHeight;
-  if (!nw || !nh) return; // tamanho real ainda desconhecido (metadados a caminho)
   const cw = elStage.clientWidth;
   const ch = elStage.clientHeight;
-  if (!cw || !ch) return;
-  const escala = Math.min(cw / nw, ch / nh); // "contain": cabe inteiro
-  el.style.width = Math.round(nw * escala) + 'px';
-  el.style.height = Math.round(nh * escala) + 'px';
+  if (!nw || !nh || !cw || !ch) {
+    atualizarDbg(); // tamanho real ainda desconhecido (metadados a caminho)
+    return;
+  }
+
+  const girado = rotExtra === 90 || rotExtra === 270;
+  // dimensoes "visuais" depois da rotacao extra
+  const vw = girado ? nh : nw;
+  const vh = girado ? nw : nh;
+  const escala = Math.min(cw / vw, ch / vh); // "contain": cabe inteiro
+  const w = Math.round(vw * escala);
+  const h = Math.round(vh * escala);
+  // o elemento (antes de girar) tem que manter a proporcao NAO girada
+  el.style.width = (girado ? h : w) + 'px';
+  el.style.height = (girado ? w : h) + 'px';
+  el.style.transform = 'translateZ(0)' + (rotExtra ? ' rotate(' + rotExtra + 'deg)' : '');
+  atualizarDbg();
 }
 
 function limparTamanhoMidia() {
   elVideo.style.width = '';
   elVideo.style.height = '';
+  elVideo.style.transform = 'translateZ(0)';
   elImg.style.width = '';
   elImg.style.height = '';
+  elImg.style.transform = 'translateZ(0)';
+}
+
+// --- diagnostico (abrir /tv?debug=1) ---------------------------------
+let elDbg = null;
+const DEBUG =
+  new URLSearchParams(location.search).has('debug') ||
+  new URLSearchParams(location.search).has('d');
+
+function montarDbg() {
+  elDbg = document.createElement('pre');
+  const s = elDbg.style;
+  s.position = 'fixed';
+  s.left = '0';
+  s.top = '0';
+  s.zIndex = '99999';
+  s.margin = '0';
+  s.padding = '10px 12px';
+  s.font = '15px/1.45 monospace';
+  s.color = '#8fff8f';
+  s.background = 'rgba(0,0,0,0.85)';
+  s.whiteSpace = 'pre';
+  s.pointerEvents = 'none';
+  s.maxWidth = '96vw';
+  s.maxHeight = '96vh';
+  s.overflow = 'hidden';
+  document.body.appendChild(elDbg);
+}
+
+function atualizarDbg() {
+  if (!elDbg) return;
+  let fit = '?';
+  let tf = '?';
+  try {
+    const cs = window.getComputedStyle(elVideo);
+    fit = cs.objectFit;
+    tf = cs.transform === 'none' ? 'none' : cs.transform.slice(0, 34);
+  } catch (e) {
+    /* ignora */
+  }
+  const vb = elVideo.getBoundingClientRect();
+  elDbg.textContent = [
+    'MURAL TV  ver ' + APP_VER,
+    'url   ' + location.pathname + location.search,
+    'tela  ' + window.innerWidth + ' x ' + window.innerHeight + '   dpr ' + (window.devicePixelRatio || 1),
+    'layout ' + layoutAtual + '   rotExtra ' + rotExtra,
+    'palco ' + elStage.clientWidth + ' x ' + elStage.clientHeight + '   hasMedia=' + elStage.classList.contains('has-media'),
+    'VIDEO real ' + elVideo.videoWidth + ' x ' + elVideo.videoHeight + '   readyState ' + elVideo.readyState + '   hidden=' + elVideo.hidden,
+    'video css  ' + (elVideo.style.width || '-') + ' x ' + (elVideo.style.height || '-'),
+    'video real na tela ' + Math.round(vb.width) + ' x ' + Math.round(vb.height),
+    'object-fit ' + fit,
+    'transform  ' + tf,
+    'IMG real ' + elImg.naturalWidth + ' x ' + elImg.naturalHeight + '   hidden=' + elImg.hidden,
+    'modo ' + (estadoAtual && estadoAtual.mode),
+  ].join('\n');
 }
 
 function clamp(n, lo, hi, def) {
@@ -457,6 +547,13 @@ if (typeof io === 'function') {
 
 // primeira carga imediata, antes mesmo do socket conectar
 buscarEstado();
+
+// overlay de diagnostico (/tv?debug=1)
+if (DEBUG) {
+  montarDbg();
+  atualizarDbg();
+  setInterval(atualizarDbg, 1000);
+}
 
 // --- voltar do standby / rede voltar ------------------------
 
