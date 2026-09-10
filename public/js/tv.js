@@ -8,7 +8,7 @@
 //  - Watchdog: 10 min sem nenhum estado e sem socket -> recarrega a pagina.
 //  - Nada disso deixa a tela preta: o conteudo atual continua exibido.
 
-const APP_VER = '20260910d';
+const APP_VER = '20260910e';
 
 const elStage = document.getElementById('stage');
 const elAviso = document.getElementById('aviso');
@@ -87,11 +87,10 @@ function ajustarMidia() {
   // dimensoes "visuais" depois da rotacao extra
   const vw = girado ? nh : nw;
   const vh = girado ? nw : nh;
-  // VIDEO: preenche a tela (corta o que sobrar, nunca estica, nunca tarja).
-  // IMAGEM: aparece inteira (aviso/foto nao pode perder pedaco).
-  const escala = emVideo
-    ? Math.max(cw / vw, ch / vh) // cover
-    : Math.min(cw / vw, ch / vh); // contain
+  // "contain": o video/imagem aparece INTEIRO, sem cortar e sem esticar.
+  // (Se a proporcao nao bater com a da tela, sobra faixa preta -> gire o
+  //  video no painel pra ele encaixar.)
+  const escala = Math.min(cw / vw, ch / vh);
   const w = Math.round(vw * escala);
   const h = Math.round(vh * escala);
   // o elemento (antes de girar) tem que manter a proporcao NAO girada
@@ -158,7 +157,7 @@ function atualizarDbg() {
     'VIDEO real ' + elVideo.videoWidth + ' x ' + elVideo.videoHeight + '   readyState ' + elVideo.readyState + '   hidden=' + elVideo.hidden,
     'video css  ' + (elVideo.style.width || '-') + ' x ' + (elVideo.style.height || '-'),
     'video real na tela ' + Math.round(vb.width) + ' x ' + Math.round(vb.height),
-    'object-fit ' + fit + '   (video=preencher, img=inteiro)',
+    'object-fit ' + fit + '   (encaixe: inteiro / contain)',
     'transform  ' + tf,
     'IMG real ' + elImg.naturalWidth + ' x ' + elImg.naturalHeight + '   hidden=' + elImg.hidden,
     'modo ' + (estadoAtual && estadoAtual.mode),

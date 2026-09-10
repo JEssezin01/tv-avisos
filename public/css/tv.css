@@ -89,6 +89,9 @@ body {
    - translateZ(0): poe o video na propria camada de GPU (decode por HW).
    - Nao definir "display" aqui -> o [hidden] precisa continuar valendo. */
 .media {
+  /* Sem max-width/height: quando o video gira 90/270 o elemento precisa
+     ficar "maior que a tela" ANTES de girar (depois de girar ele encaixa).
+     Quem limita o tamanho e o ajustarMidia (px exatos) + overflow do palco. */
   object-fit: contain;
   object-position: center;
   background: #000;
